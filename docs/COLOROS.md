@@ -16,6 +16,8 @@ FluidCapsule uses Android's promoted ongoing notification APIs where available. 
 
 - The system controls capsule geometry, animation, placement, and much of the expanded-card layout.
 - Action filtering may differ from the standard notification shade.
+- OTP cards expose an explicit `复制验证码` action in addition to the tappable card body, avoiding an ambiguous second tap after the capsule-to-card animation.
+- Every capsule also supplies a notification `deleteIntent` so an OEM surface that performs a system dismissal instead of dispatching the visible `关闭` action still consumes the matching event.
 - A source `RemoteInput` action may need to be represented by a normal action that opens FluidCapsule's local reply panel before the result is forwarded.
 - Clicking a source content intent can be affected by Android background-activity launch rules; FluidCapsule uses a transparent activity trampoline to keep the action user-initiated.
 

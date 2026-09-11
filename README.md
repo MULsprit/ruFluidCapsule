@@ -129,7 +129,7 @@ Build, test, lint, and install the debug APK / 构建、测试、Lint 并安装 
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Run the seven CPH2797 instrumentation checks / 运行 7 项 CPH2797 仪器测试：
+Run the eight CPH2797 instrumentation checks / 运行 8 项 CPH2797 仪器测试：
 
 ```bash
 adb -s SERIAL install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
@@ -221,15 +221,15 @@ More detail is available in [Architecture](docs/ARCHITECTURE.md) and [ColorOS no
 
 ### English
 
-- Local JUnit suite: 52 tests.
-- CPH2797 instrumentation suite: 7 tests, including action fallback structure, continuous history scrolling, and system notification queue preemption/restoration.
+- Local JUnit suite: 62 tests.
+- CPH2797 instrumentation suite: 8 tests, including action fallback structure, continuous history scrolling, and system notification queue preemption/restoration.
 - Required build gate: unit tests, debug APK, instrumentation APK, and Android lint with no findings.
 - GitHub Actions runs unit tests, the debug build, and lint for every push to `main` and every pull request.
 
 ### 中文
 
-- 本地 JUnit 测试：52 项。
-- CPH2797 仪器测试：7 项，包括 action 兜底结构、历史页连续滚动容器以及系统通知队列的抢占/恢复。
+- 本地 JUnit 测试：62 项。
+- CPH2797 仪器测试：8 项，包括 action 兜底结构、历史页连续滚动容器以及系统通知队列的抢占/恢复。
 - 必须通过的构建门槛：单元测试、debug APK、仪器测试 APK，以及零问题的 Android Lint。
 - 每次推送到 `main` 或创建 Pull Request 时，GitHub Actions 都会运行单元测试、debug 构建和 Lint。
 

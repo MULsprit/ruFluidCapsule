@@ -18,6 +18,7 @@ import io.github.venompool888.fluidcapsule.publisher.CapsuleCoordinator
 import io.github.venompool888.fluidcapsule.publisher.NotificationFactory
 import io.github.venompool888.fluidcapsule.notification.TencentMessageAccumulator
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -92,6 +93,41 @@ class TargetDeviceSmokeTest {
                 notification.actions.single().semanticAction,
             )
         }
+    }
+
+    @Test
+    fun testOtpGetsExplicitCopyAndCloseActions() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val now = System.currentTimeMillis()
+        val notification = NotificationFactory.baseBuilder(
+            context,
+            CapsuleEvent(
+                sourcePackage = "test.otp.app",
+                sourceLabel = "TEST ONLY",
+                eventId = "test-only:otp-actions",
+                kind = CapsuleKind.OTP,
+                title = "TEST ONLY OTP",
+                shortText = "482913",
+                body = "点击复制",
+                action = CapsuleAction.CopySensitiveText("482913"),
+                privacy = CapsulePrivacy.SHOW_FULL,
+                createdAtMillis = now,
+                expiresAtMillis = now + 60_000L,
+                dedupeKey = "test-only:otp-actions",
+            ),
+        ).build()
+
+        assertEquals(
+            listOf("复制验证码", "关闭"),
+            notification.actions.map { it.title.toString() },
+        )
+        assertEquals(R.drawable.ic_content_copy, notification.actions[0].getIcon().resId)
+        assertEquals(R.drawable.ic_notification_delete, notification.actions[1].getIcon().resId)
+        assertNotNull(notification.deleteIntent)
+        assertEquals(
+            Notification.Action.SEMANTIC_ACTION_DELETE,
+            notification.actions[1].semanticAction,
+        )
     }
 
     @Test

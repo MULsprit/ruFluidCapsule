@@ -14,9 +14,19 @@ sealed interface OtpParseResult {
 object OtpParser {
     private val keywordRegex = Regex(
         "验证码|验证密码|校验码|动态(?:验证)?码|动态密码|一次性密码|短信码|交易码|" +
-            "otp|verification\\s*code|verify\\s*code|passcode|security\\s*code|" +
-            "login\\s*code|authentication\\s*code|confirmation\\s*code|" +
-            "one[-\\s]*time\\s*(?:password|code)|your\\s+(?:login\\s+)?code|code\\s+is",
+            "\\botp\\b|verification\\s*(?:code|number)|verify\\s*code|passcode|" +
+            "security\\s*code|secret\\s*code|login\\s*code|sign[-\\s]*in\\s*code|" +
+            "authentication\\s*(?:code|number)|confirmation\\s*code|" +
+            "(?:access|authorization|activation|unlock|recovery)\\s*code|" +
+            "one[-\\s]*time\\s*(?:password|code)|temporary\\s*password|" +
+            "[0-9]+[-\\s]*digit\\s*code|\\bpin(?:\\s*code)?\\b|pin\\s*码|" +
+            "(?:delivery|verification|security|temporary)\\s*pin|" +
+            "one[-\\s]*time\\s*pin|share\\s+(?:your\\s+)?pin|your\\s+pin|pin\\s+is|" +
+            "your\\s+(?:login\\s+)?code|code\\s+is",
+        RegexOption.IGNORE_CASE,
+    )
+    private val distantExplicitCodeRegex = Regex(
+        "[0-9]+[-\\s]*digit\\s*code",
         RegexOption.IGNORE_CASE,
     )
     private val candidateRegex = Regex(
@@ -89,6 +99,11 @@ object OtpParser {
                     else -> 5
                 }
                 if (code.any(Char::isLetter) && code.any(Char::isDigit)) score += 5
+                val explicitCodeDistance = distantExplicitCodeRegex.findAll(normalized)
+                    .minOfOrNull { keyword -> minDistance(match.range, keyword.range) }
+                if (explicitCodeDistance != null && explicitCodeDistance <= 64 && distance > 24) {
+                    score += 35
+                }
                 if (validityRegex.containsMatchIn(context)) score += 5
                 if (secrecyRegex.containsMatchIn(context)) score += 8
                 if (authContextRegex.containsMatchIn(context)) score += 5

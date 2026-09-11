@@ -52,6 +52,7 @@ internal object NotificationFactory {
 
     fun baseBuilder(context: Context, event: CapsuleEvent): Notification.Builder {
         val showFull = event.privacy == CapsulePrivacy.SHOW_FULL
+        val dismissIntent = dismissPendingIntent(context, event)
         val clickIntent = when (val action = event.action) {
             is CapsuleAction.CopySensitiveText -> PendingIntent.getBroadcast(
                 context,
@@ -92,6 +93,7 @@ internal object NotificationFactory {
             .setContentText(contentText)
             .setSubText(subText)
             .setContentIntent(clickIntent)
+            .setDeleteIntent(dismissIntent)
             .setCategory(
                 if (event.kind == CapsuleKind.NOTIFICATION) {
                     Notification.CATEGORY_MESSAGE
@@ -118,7 +120,7 @@ internal object NotificationFactory {
                 event.progressIndeterminate,
             )
         }
-        addVisibleActions(context, builder, event, clickIntent)
+        addVisibleActions(context, builder, event, clickIntent, dismissIntent)
 
         if (!showFull) {
             val publicTitle = if (event.kind == io.github.venompool888.fluidcapsule.core.CapsuleKind.OTP) {
@@ -145,10 +147,18 @@ internal object NotificationFactory {
         context: Context,
         builder: Notification.Builder,
         event: CapsuleEvent,
-        openOriginalIntent: PendingIntent?,
+        primaryIntent: PendingIntent?,
+        dismissIntent: PendingIntent,
     ) {
         var count = 0
         var hasReply = false
+        if (event.action is CapsuleAction.CopySensitiveText &&
+            primaryIntent != null &&
+            count < MAX_VISIBLE_ACTIONS
+        ) {
+            builder.addAction(copyAction(context, primaryIntent))
+            count++
+        }
         if (event.kind == CapsuleKind.NOTIFICATION) {
             event.sourceActions.forEach { sourceAction ->
                 if (count >= MAX_VISIBLE_ACTIONS) return@forEach
@@ -168,41 +178,56 @@ internal object NotificationFactory {
             if (!hasReply &&
                 count < MAX_VISIBLE_ACTIONS &&
                 event.sourcePackage in OPEN_REPLY_PACKAGES &&
-                openOriginalIntent != null
+                primaryIntent != null
             ) {
                 builder.addAction(
                     Notification.Action.Builder(
                         Icon.createWithResource(context, R.drawable.ic_capsule),
                         "打开回复",
-                        openOriginalIntent,
+                        primaryIntent,
                     ).build(),
                 )
                 count++
             }
         }
         if (event.sourceActions.isEmpty() && count < MAX_VISIBLE_ACTIONS) {
-            builder.addAction(dismissAction(context, event))
+            builder.addAction(dismissAction(context, dismissIntent))
         }
     }
 
-    private fun dismissAction(context: Context, event: CapsuleEvent): Notification.Action {
+    private fun copyAction(
+        context: Context,
+        pendingIntent: PendingIntent,
+    ): Notification.Action =
+        Notification.Action.Builder(
+            Icon.createWithResource(context, R.drawable.ic_content_copy),
+            "复制验证码",
+            pendingIntent,
+        ).build()
+
+    private fun dismissPendingIntent(context: Context, event: CapsuleEvent): PendingIntent {
         val dismissIntent = Intent(context, DismissCapsuleReceiver::class.java)
             .setAction(DismissCapsuleReceiver.ACTION_DISMISS_CAPSULE)
             .putExtra(DismissCapsuleReceiver.EXTRA_EVENT_ID, event.eventId)
-        val pendingIntent = PendingIntent.getBroadcast(
+        return PendingIntent.getBroadcast(
             context,
             "${event.eventId}:dismiss".hashCode(),
             dismissIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        return Notification.Action.Builder(
+    }
+
+    private fun dismissAction(
+        context: Context,
+        pendingIntent: PendingIntent,
+    ): Notification.Action =
+        Notification.Action.Builder(
             Icon.createWithResource(context, R.drawable.ic_notification_delete),
             "关闭",
             pendingIntent,
         )
             .setSemanticAction(Notification.Action.SEMANTIC_ACTION_DELETE)
             .build()
-    }
 
     private fun forwardedAction(
         context: Context,

@@ -19,7 +19,7 @@ Thank you for helping improve FluidCapsule.
    ./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug
    ```
 
-4. For device-sensitive changes, run the four instrumentation tests and `scripts/verify-cph2797.sh` on CPH2797/API 36.
+4. For device-sensitive changes, run the eight instrumentation tests and `scripts/verify-cph2797.sh` on CPH2797/API 36.
 5. Describe the user-visible behavior and the exact CPH2797 firmware tested.
 6. Document OEM-specific assumptions and notification fallback behavior.
 

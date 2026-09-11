@@ -77,6 +77,79 @@ class OtpParserTest {
     }
 
     @Test
+    fun parsesSecretCode() {
+        val result = OtpParser.parse(
+            "Enter the following code to confirm the login attempt. Secret code: 90779837",
+        )
+        assertEquals("90779837", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesSixDigitCodeSeparatedFromKeywordByAppName() {
+        val result = OtpParser.parse(
+            "Verify your email. Use this 6-digit code in the felix mobile app: 418428. " +
+                "This code is valid for 60 mins.",
+        )
+        assertEquals("418428", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesDeliveryPin() {
+        val result = OtpParser.parse(
+            "Time to meet BEHNAM. Tell them your PIN is 1662 to confirm the delivery.",
+        )
+        assertEquals("1662", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesBarePin() {
+        val result = OtpParser.parse("PIN: 4831")
+        assertEquals("4831", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesAccessCode() {
+        val result = OtpParser.parse("Your access code is 745920. It expires in 10 minutes.")
+        assertEquals("745920", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesVerificationNumber() {
+        val result = OtpParser.parse("Verification number: 583104")
+        assertEquals("583104", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesTemporaryPassword() {
+        val result = OtpParser.parse(
+            "Your login information is: Temporary Password: 0205. " +
+                "Next time you login, you will be prompted to change your password.",
+        )
+        assertEquals("0205", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun rejectsPromoCode() {
+        val result = OtpParser.parse("Use promo code SAVE20 to receive 20% off your next order.")
+        assertEquals(OtpParseResult.None, result)
+    }
+
+    @Test
+    fun rejectsSubmissionConfirmationNumber() {
+        val result = OtpParser.parse(
+            "Assignment submitted successfully. Confirmation number: " +
+                "92f28db62fb54153ad411a53cc9c8a6c. Submitted in 2026.",
+        )
+        assertEquals(OtpParseResult.None, result)
+    }
+
+    @Test
+    fun rejectsTemporaryPasswordPolicyYear() {
+        val result = OtpParser.parse("The temporary password policy was updated in 2026.")
+        assertEquals(OtpParseResult.None, result)
+    }
+
+    @Test
     fun rejectsInformationalOtpWarningWithoutCode() {
         val result = OtpParser.parse("警方提醒：不要向陌生人泄露验证码或开启屏幕共享")
         assertEquals(OtpParseResult.None, result)
