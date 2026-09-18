@@ -15,6 +15,86 @@ class OtpParserTest {
     }
 
     @Test
+    fun parsesChineseOtpAdjacentToLabel() {
+        val result = OtpParser.parse("支付宝验证码482913，请勿泄露。唯一热线 95188")
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesChineseOtpBeforeVerificationPhrase() {
+        val result = OtpParser.parse("482913是您的登录验证码，请勿向他人泄露")
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesChineseTransactionCodeAdjacentToLabel() {
+        val result = OtpParser.parse("手机交易码482913，请勿告知他人")
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesTraditionalOneTimePassword() {
+        val result = OtpParser.parse("你的一次性密碼為482913。")
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesTraditionalOneTimeVerificationCode() {
+        val result = OtpParser.parse("你的一次性驗證碼為：482913，十分鐘後失效。")
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesAppleAccountCode() {
+        val result = OtpParser.parse("Apple 账户代码为：482913。请勿与他人共享。")
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesInputCodeForRegistration() {
+        val result = OtpParser.parse("輸入代碼482913以確認你的帳戶註冊電話號碼；切勿向他人提供此代碼。")
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun rejectsGenericAccountIdentifiersAndChinesePromotions() {
+        listOf(
+            "您的账户代码为482913，请保存用于账单查询。",
+            "输入代码SAVE20享受优惠。",
+            "輸入代碼482913領取優惠券。",
+            "验证码咨询热线10086",
+        ).forEach { assertEquals(it, OtpParseResult.None, OtpParser.parse(it)) }
+    }
+
+    @Test
+    fun keepsCodeAfterAnEarlierSupportWarning() {
+        val result = OtpParser.parse(
+            "If you did not request this, call 13 22 00. " +
+                "Beware of scam calls and never disclose your personal details. Your code is 482913.",
+        )
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun explicitFallbackDoesNotPromoteAccountNumbersOrBrandedPromotions() {
+        listOf(
+            "Your Internet Banking Customer Access Number is 73918426.",
+            "Apple Store pickup code: 482913",
+            "Westpac BPay Biller Code: 482913",
+            "Uber promo code SAVE20",
+        ).forEach { assertEquals(it, OtpParseResult.None, OtpParser.parse(it)) }
+    }
+
+    @Test
+    fun extractsMessageCodeInsteadOfAnAlphanumericBrandHeading() {
+        val result = OtpParser.parse(
+            "From another device · Life360\n" +
+                "482913 is your one-time Life360 verification code. Please do not share this with anyone.",
+        )
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
     fun parsesEnglishOtp() {
         val result = OtpParser.parse("Your verification code is 3812")
         assertEquals("3812", (result as OtpParseResult.Success).code)
@@ -53,6 +133,12 @@ class OtpParserTest {
     }
 
     @Test
+    fun rejectsServiceNumberAfterOtpSafetyReminder() {
+        val result = OtpParser.parse("请勿向任何人提供验证码，如有疑问详询客服热线 10086")
+        assertEquals(OtpParseResult.None, result)
+    }
+
+    @Test
     fun parsesCodeBeforeChineseKeyword() {
         val result = OtpParser.parse("482913 是您的登录验证码，请勿向他人泄露")
         assertEquals("482913", (result as OtpParseResult.Success).code)
@@ -74,6 +160,12 @@ class OtpParserTest {
     fun parsesAlphanumericOtp() {
         val result = OtpParser.parse("Your verification code is A7K29Q. Do not share this code.")
         assertEquals("A7K29Q", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesHyphenatedPrefixedOtp() {
+        val result = OtpParser.parse("G-482913 是您的 Google 验证码。请勿分享此码。")
+        assertEquals("482913", (result as OtpParseResult.Success).code)
     }
 
     @Test
@@ -152,6 +244,12 @@ class OtpParserTest {
     @Test
     fun rejectsInformationalOtpWarningWithoutCode() {
         val result = OtpParser.parse("警方提醒：不要向陌生人泄露验证码或开启屏幕共享")
+        assertEquals(OtpParseResult.None, result)
+    }
+
+    @Test
+    fun rejectsPickupCodeAsOtp() {
+        val result = OtpParser.parse("请凭取件码 1234-5678 到驿站取货")
         assertEquals(OtpParseResult.None, result)
     }
 }

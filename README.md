@@ -5,13 +5,13 @@
 <h1 align="center">流体胶囊 · FluidCapsule</h1>
 
 <p align="center">
-  <strong>让 Android 通知在 ColorOS 上变成真正可交互的流体胶囊。</strong><br>
-  <strong>Turn Android notifications into truly interactive capsules on ColorOS.</strong>
+  <strong>在 ColorOS 和 Pixel 上提供可交互的原生实时通知。</strong><br>
+  <strong>Interactive native live notifications on ColorOS and Pixel.</strong>
 </p>
 
-Turn Android notifications into interactive capsules on supported ColorOS devices.
+Turn Android notifications into interactive live notifications on supported ColorOS and Pixel devices.
 
-将 Android 通知转换为可交互的 ColorOS 流体云胶囊，包括验证码提取、通知白名单、邮箱“仅验证码上云”、原通知跳转和快捷回复。
+将 Android 通知转换为可交互的 ColorOS 流体云或 Pixel 原生实时通知，包括验证码提取、通知白名单、邮箱“仅验证码上云”、原通知跳转和快捷回复。
 
 > [!IMPORTANT]
 > FluidCapsule is an independent, unofficial open-source project. It is not affiliated with or endorsed by OPPO, ColorOS, Telegram, WeChat, or any other app vendor.
@@ -60,19 +60,21 @@ Turn Android notifications into interactive capsules on supported ColorOS device
 
 ### English
 
+- Additional verified device: Pixel 11 Pro XL, Android 17 / API 37; see [Pixel notes](docs/PIXEL.md).
 - Supported device: OPPO CPH2797 running Android 16 / API 36.
 - Verified firmware baseline: `CPH2797_16.0.9.400(EX01)`.
-- Promoted/live notifications must be enabled. ColorOS owns the final capsule rendering and may change it in a firmware update.
+- Promoted/live notifications must be enabled. The operating system owns the final live-notification rendering and may change it in a firmware update.
 
-FluidCapsule 1.x intentionally sets `minSdk = 36`. Older Android versions and other OEM devices are outside the supported scope.
+FluidCapsule 1.x intentionally sets `minSdk = 36`. Older Android versions and untested devices are outside the verified scope.
 
 ### 中文
 
+- 新增验证设备：Pixel 11 Pro XL，Android 17 / API 37；详见 [Pixel 说明](docs/PIXEL.md)。
 - 支持设备：运行 Android 16 / API 36 的 OPPO CPH2797。
 - 已验证固件基线：`CPH2797_16.0.9.400(EX01)`。
-- 必须启用实时通知提升/流体云通知。最终胶囊由 ColorOS 渲染，系统固件更新可能改变其行为。
+- 必须启用实时通知提升/流体云通知。最终实时通知由操作系统渲染，系统固件更新可能改变其行为。
 
-FluidCapsule 1.x 有意将 `minSdk` 设为 36；旧版 Android 和其他厂商设备不在支持范围内。
+FluidCapsule 1.x 有意将 `minSdk` 设为 36；旧版 Android 和未经测试的设备不在已验证范围内。
 
 ## Privacy model / 隐私模型
 
@@ -150,6 +152,16 @@ The output is `app/build/outputs/apk/release/app-release.apk`. APKs and signing 
 
 输出文件为 `app/build/outputs/apk/release/app-release.apk`。APK 与签名材料均有意排除在 Git 仓库之外。
 
+## Upgrade / 覆盖升级
+
+Download the signed APK from [Releases](https://github.com/Venompool888/FluidCapsule/releases) and install it over the existing release. The package name and release signing key stay the same, so settings and local history are retained. Do not uninstall or clear app data when upgrading. A debug APK uses a different signing key and cannot replace a release installation.
+
+从 [Releases](https://github.com/Venompool888/FluidCapsule/releases) 下载正式签名 APK，直接覆盖安装。包名与正式签名保持一致，原设置和本地通知历史会保留，包括已选择的永久保留策略。升级时不要卸载应用或清除数据；debug APK 的签名不同，不能覆盖正式版。
+
+Protected ADB history export is documented in [CLI](docs/CLI.md). Exported files contain complete notification text and should remain private.
+
+受权限保护的 ADB 历史导出见 [CLI](docs/CLI.md)。导出文件包含完整通知正文，请私下保存。
+
 ## Initial setup / 初始设置
 
 ### English
@@ -157,7 +169,7 @@ The output is `app/build/outputs/apk/release/app-release.apk`. APKs and signing 
 1. Install and open FluidCapsule.
 2. Grant notification-listener and notification-posting access.
 3. Select trusted source apps in the notification whitelist.
-4. Allow promoted/live notifications for FluidCapsule on the supported ColorOS version.
+4. Allow promoted/live notifications for FluidCapsule on the supported ColorOS or Pixel version.
 5. Optionally enable the explicit keep-alive controls if the system stops the listener in the background.
 
 ### 中文
@@ -165,7 +177,7 @@ The output is `app/build/outputs/apk/release/app-release.apk`. APKs and signing 
 1. 安装并打开 FluidCapsule。
 2. 授予通知读取与通知发布权限。
 3. 在通知白名单中选择可信的来源应用。
-4. 在受支持的 ColorOS 版本上允许 FluidCapsule 使用实时通知提升/流体云通知。
+4. 在受支持的 ColorOS 或 Pixel 版本上允许 FluidCapsule 使用实时通知提升/流体云通知。
 5. 如果系统会在后台停止监听服务，可按需启用明确提供的保活选项。
 
 For repeatable device configuration, see [ADB CLI](docs/CLI.md).
@@ -204,7 +216,7 @@ More detail is available in [Architecture](docs/ARCHITECTURE.md) and [ColorOS no
 - Direct reply is possible only when the source notification supplies a valid `RemoteInput` action. FluidCapsule cannot invent a private sending API for another app.
 - Smart replies are sent immediately when tapped. Manually typed replies still require the Send button.
 - OEM live-notification behavior can change between ColorOS releases.
-- Version 1.x supports only CPH2797 on the verified Android 16 firmware baseline.
+- Verified devices are CPH2797 on the documented Android 16 baseline and Pixel 11 Pro XL on Android 17.
 - Accessibility UI automation for apps without native reply actions is not implemented. The optional accessibility service does not read screen content.
 - The project does not include third-party APKs, decompiled source, proprietary assets, private protocols, or account-bypass features.
 
@@ -213,7 +225,7 @@ More detail is available in [Architecture](docs/ARCHITECTURE.md) and [ColorOS no
 - 只有来源通知提供有效的 `RemoteInput` 操作时才能直接回复；FluidCapsule 无法凭空创建其他应用的私有发送接口。
 - 点击智能回复会立即发送；手动输入的回复仍需点击发送按钮。
 - 不同 ColorOS 版本可能改变厂商实时通知行为。
-- 1.x 仅支持经过验证的 Android 16 固件基线上的 CPH2797。
+- 已验证设备为指定 Android 16 固件的 CPH2797，以及 Android 17 的 Pixel 11 Pro XL。
 - 尚未为不提供原生回复操作的应用实现无障碍界面自动化；可选无障碍服务不会读取屏幕内容。
 - 项目不包含第三方 APK、反编译源码、专有素材、私有协议或绕过账号安全的功能。
 
@@ -221,14 +233,16 @@ More detail is available in [Architecture](docs/ARCHITECTURE.md) and [ColorOS no
 
 ### English
 
-- Local JUnit suite: 62 tests.
+- Local JUnit suite: 92 tests.
+- Pixel instrumentation: 4 checks for notification construction and history export. The existing OPPO suite was not rerun for 1.1.2.
 - CPH2797 instrumentation suite: 8 tests, including action fallback structure, continuous history scrolling, and system notification queue preemption/restoration.
 - Required build gate: unit tests, debug APK, instrumentation APK, and Android lint with no findings.
 - GitHub Actions runs unit tests, the debug build, and lint for every push to `main` and every pull request.
 
 ### 中文
 
-- 本地 JUnit 测试：62 项。
+- 本地 JUnit 测试：92 项。
+- Pixel 仪器测试：4 项，覆盖通知构造和历史导出。1.1.2 未重新运行原有 OPPO 真机套件。
 - CPH2797 仪器测试：8 项，包括 action 兜底结构、历史页连续滚动容器以及系统通知队列的抢占/恢复。
 - 必须通过的构建门槛：单元测试、debug APK、仪器测试 APK，以及零问题的 Android Lint。
 - 每次推送到 `main` 或创建 Pull Request 时，GitHub Actions 都会运行单元测试、debug 构建和 Lint。

@@ -13,7 +13,10 @@ sealed interface OtpParseResult {
 
 object OtpParser {
     private val keywordRegex = Regex(
-        "验证码|验证密码|校验码|动态(?:验证)?码|动态密码|一次性密码|短信码|交易码|" +
+        "验证码|驗證碼|验证密码|驗證密碼|校验码|校驗碼|动态(?:验证)?码|動態(?:驗證)?碼|" +
+            "动态密码|動態密碼|一次性密码|一次性密碼|短信码|交易码|" +
+            "Apple\\s*(?:账户|帳戶)\\s*(?:代码|代碼)|" +
+            "(?:输入|輸入)\\s*(?:代码|代碼)(?=\\s*[0-9]{4,8}\\s*以(?:确认|確認).{0,32}(?:注册|註冊|登录|登入))|" +
             "\\botp\\b|verification\\s*(?:code|number)|verify\\s*code|passcode|" +
             "security\\s*code|secret\\s*code|login\\s*code|sign[-\\s]*in\\s*code|" +
             "authentication\\s*(?:code|number)|confirmation\\s*code|" +
@@ -30,7 +33,7 @@ object OtpParser {
         RegexOption.IGNORE_CASE,
     )
     private val candidateRegex = Regex(
-        "(?<![\\p{L}\\p{N}])([0-9]{4,8}|[A-Za-z0-9]{4,10})(?![\\p{L}\\p{N}])",
+        "(?<![A-Za-z0-9])([0-9]{4,8}|[A-Za-z0-9]{4,10})(?![A-Za-z0-9])",
     )
     private val validityRegex = Regex("([0-9]{1,2})\\s*(?:分钟|min(?:ute)?s?)", RegexOption.IGNORE_CASE)
     private val moneyContextRegex = Regex(
@@ -40,7 +43,7 @@ object OtpParser {
     )
     private val timeOrDateRegex = Regex("(?:^|\\D)(?:20[0-9]{2}[-/.])?[01]?[0-9][-/.:][0-3]?[0-9](?:\\D|$)")
     private val contactContextRegex = Regex(
-        "拨打|致电|联系客服|客服(?:电话|热线)?|热线|发送至|回复至|call|contact|hotline|customer\\s*service",
+        "拨打|致电|联系客服|客服(?:电话|热线)?|热线|详询|咨询|发送至|回复至|call|contact|hotline|customer\\s*service",
         RegexOption.IGNORE_CASE,
     )
     private val referenceContextRegex = Regex(
@@ -60,6 +63,17 @@ object OtpParser {
     private val urlRegex = Regex("(?:https?://|www\\.)\\S+", RegexOption.IGNORE_CASE)
 
     fun parse(text: String): OtpParseResult {
+        val result = parseWithScoring(text)
+        // Preserve an existing confident result or ambiguity. Explicit templates
+        // fill wording gaps rather than overriding the scored parser's choice.
+        return if (result == OtpParseResult.None) {
+            ExplicitOtpTemplates.parse(text.trim()) ?: result
+        } else {
+            result
+        }
+    }
+
+    private fun parseWithScoring(text: String): OtpParseResult {
         val normalized = text.trim()
         if (normalized.isEmpty()) return OtpParseResult.None
 
@@ -99,6 +113,10 @@ object OtpParser {
                     else -> 5
                 }
                 if (code.any(Char::isLetter) && code.any(Char::isDigit)) score += 5
+                val hasLetterHyphenPrefix = match.range.first >= 2 &&
+                    normalized[match.range.first - 2].isLetter() &&
+                    normalized[match.range.first - 1] == '-'
+                if (hasLetterHyphenPrefix && distance <= 24) score += 10
                 val explicitCodeDistance = distantExplicitCodeRegex.findAll(normalized)
                     .minOfOrNull { keyword -> minDistance(match.range, keyword.range) }
                 if (explicitCodeDistance != null && explicitCodeDistance <= 64 && distance > 24) {
@@ -107,9 +125,15 @@ object OtpParser {
                 if (validityRegex.containsMatchIn(context)) score += 5
                 if (secrecyRegex.containsMatchIn(context)) score += 8
                 if (authContextRegex.containsMatchIn(context)) score += 5
-                if (moneyContextRegex.containsMatchIn(localContext)) score -= 70
+                if (moneyContextRegex.containsMatchIn(localContext) && !(followsKeyword && distance <= 4)) score -= 70
                 if (timeOrDateRegex.findAll(normalized).any { match.range.overlaps(it.range) }) score -= 50
-                if (contactContextRegex.containsMatchIn(context)) score -= 90
+                val nearestContact = contactContextRegex.findAll(normalized)
+                    .minByOrNull { contact -> minDistance(match.range, contact.range) }
+                val contactDistance = nearestContact?.let { minDistance(match.range, it.range) }
+                val contactBeforeCandidate = nearestContact?.range?.last?.let { it < match.range.first } == true
+                if (nearestContact != null && contactDistance != null && contactDistance <= 24 &&
+                    (contactBeforeCandidate || distance > 12)
+                ) score -= 90
                 if (referenceContextRegex.containsMatchIn(context)) score -= 60
                 if (urlRegex.findAll(normalized).any { match.range.overlaps(it.range) }) score -= 100
                 if (code.toSet().size == 1) score -= 20

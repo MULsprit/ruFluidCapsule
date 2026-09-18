@@ -12,6 +12,7 @@ object NotificationHistoryStore {
     private const val DATABASE_NAME = "notification_history.db"
     private const val DATABASE_VERSION = 5
     private const val TABLE_HISTORY = "notification_history"
+    const val MAX_EXPORT_PAGE_SIZE = 25
 
     @Volatile
     private var helper: HistoryDatabase? = null
@@ -150,6 +151,52 @@ object NotificationHistoryStore {
         ).use(::readEntries)
     }
 
+    /**
+     * Reads an id-bounded, paginated export window for the protected ADB path.
+     *
+     * The first page captures the current maximum row id. Later pages must pass
+     * that value back as [snapshotMaxId], so notifications recorded while an
+     * export is in progress do not move the audit window.
+     */
+    fun exportPage(
+        context: Context,
+        afterId: Long = 0L,
+        limit: Int = MAX_EXPORT_PAGE_SIZE,
+        snapshotMaxId: Long? = null,
+    ): NotificationHistoryExportPage {
+        require(afterId >= 0L) { "afterId must be non-negative" }
+        val safeLimit = limit.coerceIn(1, MAX_EXPORT_PAGE_SIZE)
+        val snapshot = snapshotMaxId ?: maxId(context)
+        require(snapshot >= 0L) { "snapshotMaxId must be non-negative" }
+        if (afterId >= snapshot) {
+            return NotificationHistoryExportPage(
+                entries = emptyList(),
+                snapshotMaxId = snapshot,
+                nextAfterId = null,
+                hasMore = false,
+            )
+        }
+
+        val rows = database(context.applicationContext).readableDatabase.query(
+            TABLE_HISTORY,
+            ENTRY_COLUMNS,
+            "id > ? AND id <= ?",
+            arrayOf(afterId.toString(), snapshot.toString()),
+            null,
+            null,
+            "id ASC",
+            (safeLimit + 1).toString(),
+        ).use(::readEntries)
+        val hasMore = rows.size > safeLimit
+        val entries = if (hasMore) rows.take(safeLimit) else rows
+        return NotificationHistoryExportPage(
+            entries = entries,
+            snapshotMaxId = snapshot,
+            nextAfterId = entries.lastOrNull()?.id?.takeIf { hasMore },
+            hasMore = hasMore,
+        )
+    }
+
     fun forPackage(
         context: Context,
         sourcePackage: String,
@@ -195,6 +242,14 @@ object NotificationHistoryStore {
     fun count(context: Context): Long =
         database(context.applicationContext).readableDatabase.rawQuery(
             "SELECT COUNT(*) FROM $TABLE_HISTORY",
+            null,
+        ).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getLong(0) else 0L
+        }
+
+    private fun maxId(context: Context): Long =
+        database(context.applicationContext).readableDatabase.rawQuery(
+            "SELECT COALESCE(MAX(id), 0) FROM $TABLE_HISTORY",
             null,
         ).use { cursor ->
             if (cursor.moveToFirst()) cursor.getLong(0) else 0L
@@ -302,3 +357,10 @@ object NotificationHistoryStore {
         "decision_detail",
     )
 }
+
+data class NotificationHistoryExportPage(
+    val entries: List<NotificationHistoryEntry>,
+    val snapshotMaxId: Long,
+    val nextAfterId: Long?,
+    val hasMore: Boolean,
+)

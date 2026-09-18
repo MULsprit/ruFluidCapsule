@@ -42,7 +42,8 @@ object NotificationNormalizer {
         }
         messages.forEach { add(parts, it) }
         val senderIcon = if (Build.VERSION.SDK_INT >= 28) {
-            messageObjects.asReversed().firstNotNullOfOrNull { it.senderPerson?.icon }
+            // Do not borrow an older sender’s avatar when the latest sender has none.
+            messageObjects.lastOrNull()?.senderPerson?.icon
         } else {
             null
         }

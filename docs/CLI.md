@@ -46,7 +46,20 @@ History lifecycle operations:
 ./scripts/fluid-capsule-cli.sh --serial DEVICE_SERIAL history purge 30 days
 ./scripts/fluid-capsule-cli.sh --serial DEVICE_SERIAL history delete-package com.google.android.gm
 ./scripts/fluid-capsule-cli.sh --serial DEVICE_SERIAL history clear
+# The export page is capped at 25 rows and about 64 KiB of UTF-8 JSON to keep
+# the protected broadcast response small. A long single row returns an error.
+./scripts/fluid-capsule-cli.sh --serial DEVICE_SERIAL history export 0 25
+./scripts/fluid-capsule-cli.sh --serial DEVICE_SERIAL history export AFTER_ID 25 SNAPSHOT_MAX_ID
 ```
+
+`history export` returns normalized rows, their final local `decision` and
+`decisionDetail`, plus `snapshotMaxId`, `nextAfterId`, and `hasMore`. Start with
+`afterId=0` and keep the returned `snapshotMaxId` for every following page;
+send the returned `nextAfterId` as the next `afterId` until `hasMore` is false.
+The `snapshotMaxId` is an insertion upper bound, not a database transaction
+snapshot: active rows may still be updated or deleted while pages are being
+read. The export is read-only and is available through the same protected ADB
+receiver as the other history commands.
 
 System-level helpers are also available:
 

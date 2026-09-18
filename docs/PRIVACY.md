@@ -4,7 +4,7 @@ FluidCapsule needs powerful Android permissions because its core feature is tran
 
 ## Notification access
 
-Notification-listener access allows the app to read notifications, including potentially sensitive message content. FluidCapsule applies the user-selected whitelist to generic notification mirroring and supported result formatting such as Speedtest's final notification; OTP parsing is limited to the device's default SMS application.
+Notification-listener access allows the app to read notifications, including potentially sensitive message content. FluidCapsule applies the user-selected whitelist to generic notification mirroring and supported result formatting such as Speedtest's final notification; OTP parsing applies to the default SMS application and configured source apps, subject to their rules.
 
 Processing is local. The manifest does not request internet access, and the project contains no analytics or advertising SDK.
 
@@ -20,9 +20,9 @@ The switch controls future writes only:
 
 Updates to one still-active notification replace that notification's current history row instead of creating an entry for every progress or network-speed refresh. Once Android reports the notification as removed, a later notification with the same system key begins a new history entry.
 
-History stays on the device and is not included in diagnostic output. The app has backups disabled. History follows a user-selected 1–30 day local retention period and can be deleted by entry, source app, or in full. The same lifecycle operations are exposed through the protected ADB CLI. Each source app can also opt out of local history independently.
+History stays on the device unless the user explicitly exports it through the protected ADB CLI. That export includes complete notification text and routing reasons; routine diagnostic logs do not. The app has backups disabled. History follows a user-selected retention period in days, months, or years, or can be kept forever and can be deleted by entry, source app, or in full. The same lifecycle operations are exposed through the protected ADB CLI. Each source app can also opt out of local history independently.
 
-History stores the local routing outcome and a short explanation such as “not whitelisted” or “OTP-only rule did not recognize a reliable code”. This diagnostic explanation never leaves the device.
+History stores the local routing outcome and a short explanation such as “not whitelisted” or “OTP-only rule did not recognize a reliable code”. This explanation is included when the user explicitly exports history.
 
 ## Notification posting
 

@@ -20,4 +20,7 @@ data class NormalizedNotification(
     val isGroupSummary: Boolean,
     val isOngoing: Boolean,
     val channelId: String,
-)
+) {
+    val preferredLargeIcon: Icon?
+        get() = senderIcon ?: largeIcon
+}

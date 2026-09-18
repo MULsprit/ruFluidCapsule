@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.os.Bundle
 import io.github.venompool888.fluidcapsule.R
 import io.github.venompool888.fluidcapsule.action.CopyOtpReceiver
 import io.github.venompool888.fluidcapsule.action.DismissCapsuleReceiver
@@ -51,6 +52,9 @@ internal object NotificationFactory {
     }
 
     fun baseBuilder(context: Context, event: CapsuleEvent): Notification.Builder {
+        val deviceProfile = NotificationDeviceProfile.detect(
+            Build.MANUFACTURER, Build.BRAND, Build.MODEL,
+        )
         val showFull = event.privacy == CapsulePrivacy.SHOW_FULL
         val dismissIntent = dismissPendingIntent(context, event)
         val clickIntent = when (val action = event.action) {
@@ -110,6 +114,12 @@ internal object NotificationFactory {
             .setShowWhen(false)
             .setTimeoutAfter((event.expiresAtMillis - System.currentTimeMillis()).coerceAtLeast(1_000L))
 
+        // Pixel's native template otherwise uses our launcher logo as the leading icon,
+        // even when setSmallIcon points to the source app. This SystemUI hint is verified
+        // on Pixel Android 17; older implementations can safely ignore the extra.
+        if (deviceProfile.preferSourceSmallIcon) {
+            builder.addExtras(Bundle().apply { putBoolean(EXTRA_PREFER_SMALL_ICON, true) })
+        }
         event.sourceSmallIcon?.let(builder::setSmallIcon) ?: builder.setSmallIcon(R.drawable.ic_capsule)
         event.sourceLargeIcon?.let(builder::setLargeIcon)
         event.progress?.let { progress ->
@@ -131,6 +141,9 @@ internal object NotificationFactory {
             builder.setPublicVersion(
                 Notification.Builder(context, CAPSULE_CHANNEL_ID)
                     .also {
+                        if (deviceProfile.preferSourceSmallIcon) {
+                            it.addExtras(Bundle().apply { putBoolean(EXTRA_PREFER_SMALL_ICON, true) })
+                        }
                         event.sourceSmallIcon?.let(it::setSmallIcon)
                             ?: it.setSmallIcon(R.drawable.ic_capsule)
                     }
@@ -299,6 +312,7 @@ internal object NotificationFactory {
     }
 
     private const val MAX_VISIBLE_ACTIONS = 2
+    internal const val EXTRA_PREFER_SMALL_ICON = "android.app.preferSmallIcon"
     private val OPEN_REPLY_PACKAGES = setOf(
         TencentMessageAccumulator.WECHAT_PACKAGE,
         TencentMessageAccumulator.QQ_PACKAGE,

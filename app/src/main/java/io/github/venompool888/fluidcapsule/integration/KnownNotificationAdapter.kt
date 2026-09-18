@@ -48,7 +48,7 @@ object KnownNotificationAdapter {
                 sourcePackage = notification.packageName,
                 sourceLabel = appLabel,
                 sourceSmallIcon = notification.smallIcon,
-                sourceLargeIcon = notification.largeIcon ?: notification.senderIcon,
+                sourceLargeIcon = notification.preferredLargeIcon,
                 eventId = notification.notificationKey,
                 kind = CapsuleKind.CUSTOM,
                 title = title,

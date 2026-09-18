@@ -34,7 +34,7 @@
         <activity
             android:name=".settings.WhitelistActivity"
             android:exported="false"
-            android:label="通知岛白名单" />
+            android:label="通知来源白名单" />
 
         <activity
             android:name=".settings.AppRuleActivity"

@@ -20,6 +20,7 @@ import io.github.venompool888.fluidcapsule.settings.AppRuleStore
 import io.github.venompool888.fluidcapsule.settings.HistoryRetentionPolicy
 import io.github.venompool888.fluidcapsule.settings.HistoryRetentionUnit
 import io.github.venompool888.fluidcapsule.settings.UserSettings
+import io.github.venompool888.fluidcapsule.history.NotificationHistoryEntry
 import io.github.venompool888.fluidcapsule.history.NotificationHistoryStore
 import org.json.JSONArray
 import org.json.JSONObject
@@ -106,6 +107,7 @@ class FluidCapsuleCliReceiver : BroadcastReceiver() {
             retentionResult(command, policy)
                 .put("deleted", NotificationHistoryStore.purgeExpired(context, policy))
         }
+        "history-export" -> historyExport(context, intent)
         else -> throw IllegalArgumentException(
             "unknown command; see docs/CLI.md",
         )
@@ -220,6 +222,101 @@ class FluidCapsuleCliReceiver : BroadcastReceiver() {
         setter(value)
         return result(command).put("value", value)
     }
+
+    private fun historyExport(context: Context, intent: Intent): JSONObject {
+        val afterId = intent.getLongExtra(EXTRA_AFTER_ID, 0L)
+            .also { require(it >= 0L) { "after-id must be non-negative" } }
+        val requestedLimit = intent.getIntExtra(
+            EXTRA_LIMIT,
+            NotificationHistoryStore.MAX_EXPORT_PAGE_SIZE,
+        )
+        val snapshotMaxId = if (intent.hasExtra(EXTRA_SNAPSHOT_MAX_ID)) {
+            intent.getLongExtra(EXTRA_SNAPSHOT_MAX_ID, 0L)
+                .also { require(it >= 0L) { "snapshot-max-id must be non-negative" } }
+        } else {
+            null
+        }
+        val page = NotificationHistoryStore.exportPage(
+            context = context,
+            afterId = afterId,
+            limit = requestedLimit,
+            snapshotMaxId = snapshotMaxId,
+        )
+
+        var includedEntries = emptyList<NotificationHistoryEntry>()
+        var index = 0
+        while (index < page.entries.size) {
+            val candidateEntries = includedEntries + page.entries[index]
+            val candidateHasMore = index + 1 < page.entries.size || page.hasMore
+            val candidate = historyExportJson(
+                afterId = afterId,
+                limit = requestedLimit,
+                snapshotMaxId = page.snapshotMaxId,
+                entries = candidateEntries,
+                nextAfterId = candidateEntries.lastOrNull()?.id?.takeIf { candidateHasMore },
+                hasMore = candidateHasMore,
+            )
+            if (candidate.toString().toByteArray(Charsets.UTF_8).size > MAX_EXPORT_BYTES) {
+                if (includedEntries.isEmpty()) {
+                    throw IllegalArgumentException(
+                        "history export row exceeds ${MAX_EXPORT_BYTES} UTF-8 bytes; no row was truncated",
+                    )
+                }
+                break
+            }
+            includedEntries = candidateEntries
+            index++
+        }
+
+        val hasMore = includedEntries.size < page.entries.size || page.hasMore
+        return historyExportJson(
+            afterId = afterId,
+            limit = requestedLimit,
+            snapshotMaxId = page.snapshotMaxId,
+            entries = includedEntries,
+            nextAfterId = includedEntries.lastOrNull()?.id?.takeIf { hasMore }
+                ?: page.nextAfterId?.takeIf { includedEntries.isNotEmpty() },
+            hasMore = hasMore,
+        ).also { body ->
+            require(body.toString().toByteArray(Charsets.UTF_8).size <= MAX_EXPORT_BYTES) {
+                "history export response exceeds ${MAX_EXPORT_BYTES} UTF-8 bytes"
+            }
+        }
+    }
+
+    private fun historyExportJson(
+        afterId: Long,
+        limit: Int,
+        snapshotMaxId: Long,
+        entries: List<NotificationHistoryEntry>,
+        nextAfterId: Long?,
+        hasMore: Boolean,
+    ): JSONObject {
+        val entryArray = JSONArray().apply {
+            entries.forEach { entry -> put(historyEntryJson(entry)) }
+        }
+        return result("history-export")
+            .put("afterId", afterId)
+            .put("limit", limit.coerceIn(1, NotificationHistoryStore.MAX_EXPORT_PAGE_SIZE))
+            .put("count", entries.size)
+            .put("snapshotMaxId", snapshotMaxId)
+            .put("nextAfterId", nextAfterId ?: JSONObject.NULL)
+            .put("hasMore", hasMore)
+            .put("entries", entryArray)
+    }
+
+    private fun historyEntryJson(entry: NotificationHistoryEntry): JSONObject =
+        JSONObject()
+            .put("id", entry.id)
+            .put("sourcePackage", entry.sourcePackage)
+            .put("sourceLabel", entry.sourceLabel)
+            .put("title", entry.title)
+            .put("primaryText", entry.primaryText)
+            .put("combinedText", entry.combinedText)
+            .put("postedAtMillis", entry.postedAtMillis)
+            .put("capturedAtMillis", entry.capturedAtMillis)
+            .put("decision", entry.decision)
+            .put("decisionDetail", entry.decisionDetail)
 
     private fun updateAppRule(context: Context, intent: Intent): JSONObject {
         val packageName = requiredPackage(intent)
@@ -347,6 +444,10 @@ class FluidCapsuleCliReceiver : BroadcastReceiver() {
         private const val EXTRA_VALUE = "value"
         private const val EXTRA_UNIT = "unit"
         private const val EXTRA_KEY = "key"
+        private const val EXTRA_AFTER_ID = "after-id"
+        private const val EXTRA_LIMIT = "limit"
+        private const val EXTRA_SNAPSHOT_MAX_ID = "snapshot-max-id"
+        private const val MAX_EXPORT_BYTES = 64 * 1024
         private const val OPSTR_RECEIVE_SENSITIVE_NOTIFICATIONS =
             "android:receive_sensitive_notifications"
     }

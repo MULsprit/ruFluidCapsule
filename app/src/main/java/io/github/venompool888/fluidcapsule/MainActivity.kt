@@ -215,10 +215,10 @@ class MainActivity : Activity() {
         val content = pageContent()
         content.addPageHeader("规则", "通知来源、显示时长与隐私")
 
-        addSectionLabel(content, "通知来源", "选择允许转换为流体云的应用")
+        addSectionLabel(content, "通知来源", "选择允许转换为实时通知的应用")
         content.addView(buildWhitelistManagementCard(), matchWidthWrapHeight())
 
-        addSectionLabel(content, "胶囊时长", "控制 QQ、微信等消息在流体云中的停留时间")
+        addSectionLabel(content, "胶囊时长", "控制 QQ、微信等实时通知的停留时间")
         val durationCard = card()
         durationCard.addDisplayDurationSetting()
         content.addView(durationCard, matchWidthWrapHeight())
@@ -747,7 +747,7 @@ class MainActivity : Activity() {
     }
 
     private fun decisionLabel(decision: String): String = when (decision) {
-        "PUBLISHED" -> "● 已提交上云"
+        "PUBLISHED" -> "● 已提交展示队列"
         "FILTERED" -> "● 已被规则过滤"
         "SKIPPED" -> "● 未上云"
         "CAPTURED" -> "● 正在处理"
@@ -1242,11 +1242,11 @@ class MainActivity : Activity() {
             DiagnosticsStore.markPublish(
                 this,
                 "PROMOTION_SETTINGS",
-                "unsupported_by_coloros_fallback_to_app_notifications",
+                "unsupported_promotion_settings_fallback_to_app_notifications",
             )
             Toast.makeText(
                 this,
-                "ColorOS 未提供标准实时通知提升入口，已打开普通通知设置",
+                "当前系统未提供实时通知提升入口，已打开普通通知设置",
                 Toast.LENGTH_LONG,
             ).show()
             try {

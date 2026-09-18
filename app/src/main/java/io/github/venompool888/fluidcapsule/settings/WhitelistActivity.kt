@@ -71,7 +71,7 @@ class WhitelistActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         createdAtMillis = SystemClock.elapsedRealtime()
-        title = "通知岛白名单"
+        title = "通知来源白名单"
         configureSystemBars()
 
         val root = LinearLayout(this).apply {
@@ -79,7 +79,7 @@ class WhitelistActivity : Activity() {
             setBackgroundColor(palette.page)
         }
         root.addView(TextView(this).apply {
-            text = "通知岛白名单"
+            text = "通知来源白名单"
             textSize = 24f
             setTextColor(palette.textPrimary)
         })

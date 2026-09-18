@@ -59,6 +59,7 @@ Usage:
   fluid-capsule-cli.sh [--serial SERIAL] history count|clear
   fluid-capsule-cli.sh [--serial SERIAL] history delete-package PACKAGE
   fluid-capsule-cli.sh [--serial SERIAL] history purge 1..999 [days|months|years]
+  fluid-capsule-cli.sh [--serial SERIAL] history export [AFTER_ID] [LIMIT] [SNAPSHOT_MAX_ID]
   fluid-capsule-cli.sh [--serial SERIAL] system notification-listener true|false
   fluid-capsule-cli.sh [--serial SERIAL] system post-notifications true|false
   fluid-capsule-cli.sh [--serial SERIAL] system accessibility true|false
@@ -152,6 +153,20 @@ case "${1:-}" in
       clear) broadcast --es command history-clear ;;
       delete-package) broadcast --es command history-delete-package --es package "${3:?package required}" ;;
       purge) broadcast --es command history-purge --es value "${3:?retention value required}" --es unit "${4:-days}" ;;
+      export)
+        after_id="${3:-0}"
+        limit="${4:-25}"
+        if [[ -n "${5:-}" ]]; then
+          broadcast --es command history-export \
+            --el after-id "$after_id" \
+            --ei limit "$limit" \
+            --el snapshot-max-id "$5"
+        else
+          broadcast --es command history-export \
+            --el after-id "$after_id" \
+            --ei limit "$limit"
+        fi
+        ;;
       *) usage; exit 2 ;;
     esac
     ;;

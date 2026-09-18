@@ -124,7 +124,7 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
         val isWhitelisted = NotificationWhitelist.contains(this, sbn.packageName)
         if (!isDefaultSms && !isWhitelisted) {
             DiagnosticsStore.markParse(this, "SKIPPED_NOT_WHITELISTED")
-            recordDecision(shouldRecordHistory, normalized.notificationKey, "SKIPPED", "未加入通知岛白名单")
+            recordDecision(shouldRecordHistory, normalized.notificationKey, "SKIPPED", "未加入实时通知白名单")
             return
         }
 
@@ -147,7 +147,8 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
         // Parse only the currently displayed message. Aggregated text can contain the
         // conversation title and stale MessagingStyle messages, which must never become
         // OTP candidates for the latest notification.
-        when (val result = OtpParser.parse(normalized.primaryText)) {
+        val otpResult = OtpParser.parse(normalized.primaryText)
+        when (val result = otpResult) {
             is OtpParseResult.Success -> {
                 DiagnosticsStore.markParse(this, "OTP_SUCCESS_${result.confidence}")
                 val now = System.currentTimeMillis()
@@ -162,7 +163,7 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
                         sourcePackage = normalized.packageName,
                         sourceLabel = presentation.sourceLabel,
                         sourceSmallIcon = normalized.smallIcon,
-                        sourceLargeIcon = normalized.largeIcon ?: normalized.senderIcon,
+                        sourceLargeIcon = normalized.preferredLargeIcon,
                         eventId = normalized.notificationKey,
                         kind = CapsuleKind.OTP,
                         title = presentation.title,
@@ -184,7 +185,7 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
                     shouldRecordHistory,
                     normalized.notificationKey,
                     "PUBLISHED",
-                    "验证码识别成功并已提交到流体云",
+                    "验证码识别成功，已提交到实时通知队列",
                 )
                 return
             }
@@ -194,7 +195,19 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
             OtpParseResult.None -> DiagnosticsStore.markParse(this, "NO_OTP")
         }
 
-        if (!isWhitelisted) return
+        if (!isWhitelisted) {
+            recordDecision(
+                shouldRecordHistory,
+                normalized.notificationKey,
+                "SKIPPED",
+                if (otpResult is OtpParseResult.Ambiguous) {
+                    "默认短信包含多个候选验证码，无法可靠选择；普通短信未开启通知转换"
+                } else {
+                    "默认短信未识别出可靠验证码；普通短信未开启通知转换"
+                },
+            )
+            return
+        }
         if (NotificationWhitelist.isOtpOnly(this, normalized.packageName)) {
             DiagnosticsStore.markParse(this, "SKIPPED_OTP_ONLY_NON_OTP")
             recordDecision(
@@ -219,7 +232,7 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
                         priorityAdjustment = appRule.priority,
                     ),
                 )
-                recordDecision(shouldRecordHistory, normalized.notificationKey, "PUBLISHED", "专属适配器已提交到流体云")
+                recordDecision(shouldRecordHistory, normalized.notificationKey, "PUBLISHED", "专属适配器已提交到实时通知队列")
                 return
             }
             KnownNotificationDecision.Suppress -> {
@@ -260,7 +273,7 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
                 sourcePackage = normalized.packageName,
                 sourceLabel = appLabel,
                 sourceSmallIcon = normalized.smallIcon,
-                sourceLargeIcon = normalized.largeIcon ?: normalized.senderIcon,
+                sourceLargeIcon = normalized.preferredLargeIcon,
                 sourceActions = sourceActions,
                 smartReplies = rankingFeatures.smartReplies,
                 eventId = normalized.notificationKey,
@@ -278,7 +291,7 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
                 priorityAdjustment = appRule.priority,
             ),
         )
-        recordDecision(shouldRecordHistory, normalized.notificationKey, "PUBLISHED", "白名单规则通过并已提交到流体云")
+        recordDecision(shouldRecordHistory, normalized.notificationKey, "PUBLISHED", "白名单规则通过，已提交到实时通知队列")
     }
 
     private fun dismissIfPending(sbn: StatusBarNotification): Boolean {
