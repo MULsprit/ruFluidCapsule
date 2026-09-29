@@ -75,7 +75,13 @@ class PixelNotificationTest {
         assertEquals(R.drawable.ic_content_copy, notification.smallIcon.resId)
         assertNotNull(notification.getLargeIcon())
         assertNull(notification.publicVersion.getLargeIcon())
-        assertTrue(notification.hasPromotableCharacteristics())
+        val requestedExtra = notification.extras.getBoolean("android.requestPromotedOngoing")
+        assertTrue(requestedExtra)
+        assertTrue(notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
+        // Stock API 36 used the earlier colorized eligibility rule. Pixel API 37
+        // uses the explicit promotion request, while this test's icon/privacy
+        // assertions apply to both versions.
+        if (Build.VERSION.SDK_INT >= 37) assertTrue(notification.hasPromotableCharacteristics())
         assertEquals("解锁后查看", notification.publicVersion.extras.getCharSequence(Notification.EXTRA_TEXT))
     }
 

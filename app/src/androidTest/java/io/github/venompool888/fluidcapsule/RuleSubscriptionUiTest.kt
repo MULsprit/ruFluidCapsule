@@ -17,8 +17,11 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.security.KeyPairGenerator
+import java.security.MessageDigest
 import java.security.Signature
+import java.io.File
 import java.util.Base64
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
@@ -76,6 +79,48 @@ class RuleSubscriptionUiTest {
             await { fake.installs.get() == 1 }
             assertEquals(1, fake.installs.get())
         }
+    }
+
+    @Test fun signedFixtureInstallsThroughUiAndVerifiedStore() {
+        val keys = KeyPairGenerator.getInstance("Ed25519", BouncyCastleProvider()).generateKeyPair()
+        val trust = RuleTrust(keys.public)
+        val pack = """{"schemaVersion":1,"version":2,"otpKeywords":[{"id":"synthetic","phrase":"Synthetic secure number"}],"otpBindings":[],"verificationRequests":[],"otpExclusions":[],"linkExclusions":[]}""".toByteArray()
+        val hash = MessageDigest.getInstance("SHA-256").digest(pack).joinToString("") { "%02x".format(it) }
+        val manifest = """{"schemaVersion":1,"version":2,"minAppVersionCode":38,"packSha256":"$hash","notes":"Synthetic test"}""".toByteArray()
+        val signer = Signature.getInstance("Ed25519", BouncyCastleProvider())
+        signer.initSign(keys.private)
+        signer.update(manifest)
+        val signature = Base64.getEncoder().encode(signer.sign())
+        val dir = File(context.filesDir, "test-rule-ui-${UUID.randomUUID()}")
+        val store = RuleStore(context, trust, dir, 38)
+        val source = object : RuleSource {
+            override fun fetchManifest() = manifest to signature
+            override fun fetchPack(version: Int) = pack
+        }
+        val state = object : RuleUpdateStateStore {
+            override var subscriptionEnabled = true
+            override var lastSuccessfulCheckMillis = 0L
+            override var manifest: ByteArray? = null
+            override var signature: ByteArray? = null
+            override var dismissedVersion = 0
+            override var restoredVersion = 0
+        }
+        RuleUpdateGatewayProvider.testFactory = {
+            RuleUpdateCoordinator(source, trust, { store.loadLatest()?.pack?.version ?: 1 },
+                { store.install(it) }, { store.restoreBuiltIn() }, state, 38)
+        }
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                await { state.lastSuccessfulCheckMillis > 0 }
+                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+                scenario.onActivity { activity ->
+                    (field(activity, "ruleUpdateDialog") as AlertDialog)
+                        .getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+                }
+                await { store.loadLatest()?.pack?.version == 2 }
+                assertEquals("Synthetic secure number", store.loadLatest()!!.pack.otpKeywords.single().phrase)
+            }
+        } finally { dir.deleteRecursively() }
     }
 
     @Test fun subscriptionOffSkipsAutomaticButManualCheckWorks() {
