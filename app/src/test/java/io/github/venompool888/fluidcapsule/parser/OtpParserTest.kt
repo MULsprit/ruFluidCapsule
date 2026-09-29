@@ -1,10 +1,38 @@
 package io.github.venompool888.fluidcapsule.parser
 
+import io.github.venompool888.fluidcapsule.rules.CodePosition
+import io.github.venompool888.fluidcapsule.rules.LiteralRule
+import io.github.venompool888.fluidcapsule.rules.OtpBindingRule
+import io.github.venompool888.fluidcapsule.rules.RulePack
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OtpParserTest {
+    @Test
+    fun remoteLiteralAndBindingsCaptureOnlyRealCodeContexts() {
+        val rules = RulePack.EMPTY.copy(
+            otpKeywords = listOf(LiteralRule("secure", "secure number")),
+            otpBindings = listOf(
+                OtpBindingRule("after", "secure number", CodePosition.AFTER, 12),
+                OtpBindingRule("before", "secure number", CodePosition.BEFORE, 12),
+            ),
+        )
+        assertEquals("482913", (OtpParser.parse("Your secure number is 482913", rules) as OtpParseResult.Success).code)
+        assertEquals("482913", (OtpParser.parse("482913 is your secure number", rules) as OtpParseResult.Success).code)
+        assertEquals(OtpParseResult.None, OtpParser.parse("Your order number is 482913", rules))
+        val broad = rules.copy(otpKeywords = listOf(LiteralRule("order", "order number")))
+        assertEquals(OtpParseResult.None, OtpParser.parse("Your order number is 482913", broad))
+        val money = rules.copy(otpKeywords = listOf(LiteralRule("amount", "Amount")))
+        assertEquals(OtpParseResult.None, OtpParser.parse("Amount 482913 USD", money))
+    }
+
+    @Test
+    fun remoteExclusionSuppressesOtherwiseValidCode() {
+        val rules = RulePack.EMPTY.copy(otpExclusions = listOf(LiteralRule("deny", "test promotion")))
+        assertEquals(OtpParseResult.None, OtpParser.parse("Your verification code is 482913. Test promotion.", rules))
+    }
+
     @Test
     fun parsesChineseOtp() {
         val result = OtpParser.parse("您的验证码为 482913，5 分钟内有效")

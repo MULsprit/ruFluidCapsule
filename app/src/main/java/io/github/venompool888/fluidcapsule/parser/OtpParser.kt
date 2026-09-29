@@ -1,5 +1,8 @@
 package io.github.venompool888.fluidcapsule.parser
 
+import io.github.venompool888.fluidcapsule.rules.CodePosition
+import io.github.venompool888.fluidcapsule.rules.RulePack
+
 sealed interface OtpParseResult {
     data class Success(
         val code: String,
@@ -41,6 +44,10 @@ object OtpParser {
             "^[0-9,.]*\\s*(?:元|rmb|cny|aud|usd)",
         RegexOption.IGNORE_CASE,
     )
+    private val moneyTermRegex = Regex(
+        "¥|￥|元|金额|支付|支出|收入|余额|账单|\\b(?:price|amount|paid|payment|rmb|cny|aud|usd)\\b",
+        RegexOption.IGNORE_CASE,
+    )
     private val timeOrDateRegex = Regex("(?:^|\\D)(?:20[0-9]{2}[-/.])?[01]?[0-9][-/.:][0-3]?[0-9](?:\\D|$)")
     private val contactContextRegex = Regex(
         "拨打|致电|联系客服|客服(?:电话|热线)?|热线|详询|咨询|发送至|回复至|call|contact|hotline|customer\\s*service",
@@ -62,8 +69,9 @@ object OtpParser {
     )
     private val urlRegex = Regex("(?:https?://|www\\.)\\S+", RegexOption.IGNORE_CASE)
 
-    fun parse(text: String): OtpParseResult {
-        val result = parseWithScoring(text)
+    fun parse(text: String, rules: RulePack = RulePack.EMPTY): OtpParseResult {
+        if (rules.otpExclusions.any { text.contains(it.phrase, ignoreCase = true) }) return OtpParseResult.None
+        val result = parseWithScoring(text, rules)
         // Preserve an existing confident result or ambiguity. Explicit templates
         // fill wording gaps rather than overriding the scored parser's choice.
         return if (result == OtpParseResult.None) {
@@ -73,12 +81,16 @@ object OtpParser {
         }
     }
 
-    private fun parseWithScoring(text: String): OtpParseResult {
+    private fun parseWithScoring(text: String, rules: RulePack): OtpParseResult {
         val normalized = text.trim()
         if (normalized.isEmpty()) return OtpParseResult.None
 
-        val keywords = keywordRegex.findAll(normalized).toList()
-        if (keywords.isEmpty()) return OtpParseResult.None
+        val keywords = keywordRegex.findAll(normalized).map { KeywordHit(it.range, false) }.toList() +
+            rules.otpKeywords.flatMap { rule -> literalRanges(normalized, rule.phrase).map { KeywordHit(it, true) } }
+        val bindings = rules.otpBindings.flatMap { rule ->
+            literalRanges(normalized, rule.phrase).map { rule to it }
+        }
+        if (keywords.isEmpty() && bindings.isEmpty()) return OtpParseResult.None
 
         val candidates = candidateRegex.findAll(normalized)
             .filter { match ->
@@ -86,9 +98,17 @@ object OtpParser {
                 code.all(Char::isDigit) ||
                     (code.any(Char::isDigit) && code.any(Char::isLetter))
             }
-            .map { match ->
+            .mapNotNull { match ->
                 val code = match.groupValues[1]
-                val closestKeyword = keywords.minBy { keyword -> minDistance(match.range, keyword.range) }
+                val eligibleBindings = bindings.filter { (rule, range) ->
+                    minDistance(match.range, range) <= rule.maxDistance && when (rule.codePosition) {
+                        CodePosition.AFTER -> match.range.first > range.last
+                        CodePosition.BEFORE -> match.range.last < range.first
+                    }
+                }.map { KeywordHit(it.second, true) }
+                val closestKeyword = (keywords + eligibleBindings)
+                    .minByOrNull { keyword -> minDistance(match.range, keyword.range) }
+                    ?: return@mapNotNull null
                 val distance = minDistance(match.range, closestKeyword.range)
                 val followsKeyword = match.range.first > closestKeyword.range.last
                 val contextStart = (match.range.first - 24).coerceAtLeast(0)
@@ -97,6 +117,13 @@ object OtpParser {
                 val localContextStart = (match.range.first - 10).coerceAtLeast(0)
                 val localContextEnd = (match.range.last + 11).coerceAtMost(normalized.length)
                 val localContext = normalized.substring(localContextStart, localContextEnd)
+                if (closestKeyword.remote &&
+                    (moneyTermRegex.containsMatchIn(context) ||
+                        referenceContextRegex.containsMatchIn(context) ||
+                        contactContextRegex.containsMatchIn(localContext) ||
+                        timeOrDateRegex.findAll(normalized).any { match.range.overlaps(it.range) } ||
+                        urlRegex.findAll(normalized).any { match.range.overlaps(it.range) })
+                ) return@mapNotNull null
                 var score = 25
                 score += when {
                     followsKeyword && distance <= 4 -> 65
@@ -174,5 +201,18 @@ object OtpParser {
 
     private fun IntRange.overlaps(other: IntRange): Boolean = first <= other.last && other.first <= last
 
+    private fun literalRanges(text: String, phrase: String): List<IntRange> {
+        val ranges = mutableListOf<IntRange>()
+        var from = 0
+        while (from < text.length) {
+            val index = text.indexOf(phrase, from, ignoreCase = true)
+            if (index < 0) break
+            ranges += index until index + phrase.length
+            from = index + phrase.length
+        }
+        return ranges
+    }
+
+    private data class KeywordHit(val range: IntRange, val remote: Boolean)
     private data class Candidate(val code: String, val score: Int, val range: IntRange)
 }

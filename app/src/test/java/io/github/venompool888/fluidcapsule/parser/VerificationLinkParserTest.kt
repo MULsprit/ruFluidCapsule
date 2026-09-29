@@ -1,10 +1,38 @@
 package io.github.venompool888.fluidcapsule.parser
 
+import io.github.venompool888.fluidcapsule.rules.LiteralRule
+import io.github.venompool888.fluidcapsule.rules.RulePack
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class VerificationLinkParserTest {
+    @Test
+    fun remoteVerificationRequestBindsOnlyOneAdjacentUrl() {
+        val rules = RulePack.EMPTY.copy(
+            verificationRequests = listOf(LiteralRule("confirm", "Complete email confirmation")),
+        )
+        val url = "https://account.example.test/confirm?token=example"
+        assertEquals(url, VerificationLinkParser.parse("Complete email confirmation: $url", rules)?.url)
+        assertEquals(null, VerificationLinkParser.parse(
+            "Complete email confirmation in the app. Privacy policy: https://example.test/privacy", rules,
+        )?.url)
+        assertEquals(null, VerificationLinkParser.parse(
+            "Complete email confirmation: $url https://account.example.test/other", rules,
+        )?.url)
+    }
+
+    @Test
+    fun remoteLinkExclusionSuppressesAction() {
+        val rules = RulePack.EMPTY.copy(
+            verificationRequests = listOf(LiteralRule("confirm", "Complete email confirmation")),
+            linkExclusions = listOf(LiteralRule("deny", "read details")),
+        )
+        assertNull(VerificationLinkParser.parse(
+            "Complete email confirmation: read details https://example.test/info", rules,
+        ))
+    }
+
     @Test
     fun extractsUrlBoundToEmailVerificationRequest() {
         assertEquals(

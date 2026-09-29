@@ -1,5 +1,6 @@
 package io.github.venompool888.fluidcapsule.parser
 
+import io.github.venompool888.fluidcapsule.rules.RulePack
 import java.net.URI
 
 data class VerificationLinkRequest(val url: String?)
@@ -35,9 +36,11 @@ object VerificationLinkParser {
     )
     private val sentenceBreak = Regex("[.!?。！？]")
 
-    fun parse(text: String): VerificationLinkRequest? {
+    fun parse(text: String, rules: RulePack = RulePack.EMPTY): VerificationLinkRequest? {
         if (text.isBlank()) return null
-        val requests = requestPatterns.flatMap { it.findAll(text).toList() }
+        if (rules.linkExclusions.any { text.contains(it.phrase, ignoreCase = true) }) return null
+        val requests = requestPatterns.flatMap { it.findAll(text).map { match -> match.range }.toList() } +
+            rules.verificationRequests.flatMap { rule -> literalRanges(text, rule.phrase) }
         if (requests.isEmpty()) return null
 
         val matchingUrls = urlPattern.findAll(text)
@@ -47,7 +50,7 @@ object VerificationLinkParser {
                 if (uri.scheme?.lowercase() !in setOf("http", "https") || uri.host.isNullOrBlank() ||
                     uri.userInfo != null
                 ) return@mapNotNull null
-                if (requests.none { request -> isBoundToRequest(text, request.range, match.range) }) {
+                if (requests.none { request -> isBoundToRequest(text, request, match.range) }) {
                     return@mapNotNull null
                 }
                 url
@@ -68,5 +71,17 @@ object VerificationLinkParser {
         return gap.length <= 180 &&
             !sentenceBreak.containsMatchIn(proseBetween) &&
             !unrelatedBridge.containsMatchIn(proseBetween)
+    }
+
+    private fun literalRanges(text: String, phrase: String): List<IntRange> {
+        val ranges = mutableListOf<IntRange>()
+        var from = 0
+        while (from < text.length) {
+            val index = text.indexOf(phrase, from, ignoreCase = true)
+            if (index < 0) break
+            ranges += index until index + phrase.length
+            from = index + phrase.length
+        }
+        return ranges
     }
 }
