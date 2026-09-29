@@ -20,6 +20,7 @@ import io.github.venompool888.fluidcapsule.core.CapsuleEvent
 import io.github.venompool888.fluidcapsule.core.CapsuleKind
 import io.github.venompool888.fluidcapsule.core.CapsulePrivacy
 import io.github.venompool888.fluidcapsule.notification.TencentMessageAccumulator
+import io.github.venompool888.fluidcapsule.settings.EmailAppClassifier
 
 internal object NotificationFactory {
     const val CAPSULE_CHANNEL_ID = "capsule_events"
@@ -67,6 +68,7 @@ internal object NotificationFactory {
                     .putExtra(CopyOtpReceiver.EXTRA_EVENT_ID, event.eventId),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
+            is CapsuleAction.OpenVerificationLink -> verificationPendingIntent(context, event, action.url)
             is CapsuleAction.OpenOriginal -> PendingIntent.getActivity(
                 context,
                 event.eventId.hashCode(),
@@ -88,6 +90,7 @@ internal object NotificationFactory {
 
         val subText = when (event.action) {
             is CapsuleAction.CopySensitiveText -> event.sourceLabel ?: "点击复制"
+            is CapsuleAction.OpenVerificationLink -> event.sourceLabel
             is CapsuleAction.OpenOriginal -> event.sourceLabel
             CapsuleAction.None -> null
         }
@@ -133,10 +136,10 @@ internal object NotificationFactory {
         addVisibleActions(context, builder, event, clickIntent, dismissIntent)
 
         if (!showFull) {
-            val publicTitle = if (event.kind == io.github.venompool888.fluidcapsule.core.CapsuleKind.OTP) {
-                "收到验证码"
-            } else {
-                "${event.title} 有新通知"
+            val publicTitle = when (event.kind) {
+                CapsuleKind.OTP -> "收到验证码"
+                CapsuleKind.VERIFICATION -> "收到验证请求"
+                else -> "${event.title} 有新通知"
             }
             builder.setPublicVersion(
                 Notification.Builder(context, CAPSULE_CHANNEL_ID)
@@ -170,6 +173,33 @@ internal object NotificationFactory {
             count < MAX_VISIBLE_ACTIONS
         ) {
             builder.addAction(copyAction(context, primaryIntent))
+            count++
+        }
+        if (event.kind == CapsuleKind.OTP && event.verificationUrl != null && count < MAX_VISIBLE_ACTIONS) {
+            builder.addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(context, R.drawable.ic_capsule),
+                    "打开验证链接",
+                    verificationPendingIntent(context, event, event.verificationUrl),
+                ).build(),
+            )
+            count++
+        }
+        if (event.kind == CapsuleKind.VERIFICATION && primaryIntent != null && count < MAX_VISIBLE_ACTIONS) {
+            val label = if (event.action is CapsuleAction.OpenVerificationLink) {
+                "打开验证链接"
+            } else if (EmailAppClassifier.isEmailApp(event.sourcePackage, emptySet())) {
+                "查看验证邮件"
+            } else {
+                "查看验证消息"
+            }
+            builder.addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(context, R.drawable.ic_capsule),
+                    label,
+                    primaryIntent,
+                ).build(),
+            )
             count++
         }
         if (event.kind == CapsuleKind.NOTIFICATION) {
@@ -217,6 +247,21 @@ internal object NotificationFactory {
             "复制验证码",
             pendingIntent,
         ).build()
+
+    private fun verificationPendingIntent(
+        context: Context,
+        event: CapsuleEvent,
+        url: String,
+    ): PendingIntent = PendingIntent.getActivity(
+        context,
+        "${event.eventId}:verify-link".hashCode(),
+        Intent(context, OpenOriginalActivity::class.java)
+            .setAction(OpenOriginalActivity.ACTION_OPEN_VERIFICATION_LINK)
+            .putExtra(OpenOriginalActivity.EXTRA_VERIFICATION_URL, url)
+            .putExtra(OpenOriginalActivity.EXTRA_SOURCE_PACKAGE, event.sourcePackage)
+            .putExtra(OpenOriginalActivity.EXTRA_EVENT_ID, event.eventId),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
 
     private fun dismissPendingIntent(context: Context, event: CapsuleEvent): PendingIntent {
         val dismissIntent = Intent(context, DismissCapsuleReceiver::class.java)

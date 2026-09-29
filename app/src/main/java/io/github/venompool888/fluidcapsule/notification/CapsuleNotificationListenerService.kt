@@ -17,6 +17,7 @@ import io.github.venompool888.fluidcapsule.integration.KnownNotificationDecision
 import io.github.venompool888.fluidcapsule.parser.OtpParseResult
 import io.github.venompool888.fluidcapsule.parser.OtpParser
 import io.github.venompool888.fluidcapsule.parser.OtpPresentationFormatter
+import io.github.venompool888.fluidcapsule.parser.VerificationLinkParser
 import io.github.venompool888.fluidcapsule.publisher.CapsuleCoordinator
 import io.github.venompool888.fluidcapsule.publisher.PublisherRouter
 import io.github.venompool888.fluidcapsule.settings.NotificationWhitelist
@@ -148,6 +149,7 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
         // conversation title and stale MessagingStyle messages, which must never become
         // OTP candidates for the latest notification.
         val otpResult = OtpParser.parse(normalized.primaryText)
+        val verificationRequest = VerificationLinkParser.parse(normalized.primaryText)
         when (val result = otpResult) {
             is OtpParseResult.Success -> {
                 DiagnosticsStore.markParse(this, "OTP_SUCCESS_${result.confidence}")
@@ -179,6 +181,7 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
                         expiresAtMillis = now + ttlMinutes * 60_000L,
                         dedupeKey = "${normalized.packageName}:${result.code}",
                         priorityAdjustment = appRule.priority,
+                        verificationUrl = verificationRequest?.url,
                     ),
                 )
                 recordDecision(
@@ -193,6 +196,45 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
                 DiagnosticsStore.markParse(this, "OTP_AMBIGUOUS_${result.candidateCount}")
             }
             OtpParseResult.None -> DiagnosticsStore.markParse(this, "NO_OTP")
+        }
+
+        if (verificationRequest != null) {
+            val action = verificationRequest.url?.let(CapsuleAction::OpenVerificationLink)
+                ?: normalized.contentIntent?.let(CapsuleAction::OpenOriginal)
+            if (action != null) {
+                val now = System.currentTimeMillis()
+                PublisherRouter.publish(
+                    this,
+                    CapsuleEvent(
+                        sourcePackage = normalized.packageName,
+                        sourceLabel = appLabel,
+                        sourceSmallIcon = normalized.smallIcon,
+                        sourceLargeIcon = normalized.preferredLargeIcon,
+                        eventId = normalized.notificationKey,
+                        kind = CapsuleKind.VERIFICATION,
+                        title = "验证请求 · $appLabel",
+                        shortText = "待验证",
+                        body = if (verificationRequest.url != null) "点击打开验证链接" else "点击查看验证消息",
+                        action = action,
+                        privacy = CapsulePrivacy.HIDE_SENSITIVE,
+                        createdAtMillis = now,
+                        expiresAtMillis = now + AppRuleStore.effectiveTtlMinutes(this, normalized.packageName) * 60_000L,
+                        dedupeKey = normalized.notificationKey,
+                        priorityAdjustment = appRule.priority,
+                    ),
+                )
+                recordDecision(
+                    shouldRecordHistory,
+                    normalized.notificationKey,
+                    "PUBLISHED",
+                    if (verificationRequest.url != null) {
+                        "验证链接已提交到实时通知队列"
+                    } else {
+                        "验证操作已提交到实时通知队列，通知正文未包含可直接打开的网址"
+                    },
+                )
+                return
+            }
         }
 
         if (!isWhitelisted) {

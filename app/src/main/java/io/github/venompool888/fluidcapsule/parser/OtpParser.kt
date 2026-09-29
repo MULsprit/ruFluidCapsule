@@ -13,7 +13,7 @@ sealed interface OtpParseResult {
 
 object OtpParser {
     private val keywordRegex = Regex(
-        "验证码|驗證碼|验证密码|驗證密碼|校验码|校驗碼|动态(?:验证)?码|動態(?:驗證)?碼|" +
+        "验证码|驗證碼|验证密码|驗證密碼|校验码|校驗碼|登录代码|登入代碼|登入代码|登錄代碼|动态(?:验证)?码|動態(?:驗證)?碼|" +
             "动态密码|動態密碼|一次性密码|一次性密碼|短信码|交易码|" +
             "Apple\\s*(?:账户|帳戶)\\s*(?:代码|代碼)|" +
             "(?:输入|輸入)\\s*(?:代码|代碼)(?=\\s*[0-9]{4,8}\\s*以(?:确认|確認).{0,32}(?:注册|註冊|登录|登入))|" +
@@ -139,7 +139,18 @@ object OtpParser {
                 if (code.toSet().size == 1) score -= 20
                 Candidate(code, score.coerceIn(0, 100), match.range)
             }
-            .distinctBy { it.code }
+            .groupBy { it.code }
+            .values
+            .map { matches ->
+                // Email previews often repeat a numeric OTP before the actual
+                // "one-time passcode" label. Keep its strongest occurrence.
+                // Repeated mixed tokens may be product names (for example Life360).
+                if (matches.first().code.all(Char::isDigit)) {
+                    matches.maxBy { it.score }
+                } else {
+                    matches.first()
+                }
+            }
             .sortedByDescending { it.score }
             .toList()
 

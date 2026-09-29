@@ -29,6 +29,15 @@ class CapsuleQueueReducerTest {
     }
 
     @Test
+    fun verificationRequestPreemptsMessageButNotOtp() {
+        val queue = CapsuleQueueReducer()
+        queue.submit(event("message", CapsuleKind.NOTIFICATION, 0), 0)
+        assertEquals("verify", queue.submit(event("verify", CapsuleKind.VERIFICATION, 1), 1)?.eventId)
+        assertEquals("otp", queue.submit(event("otp", CapsuleKind.OTP, 2), 2)?.eventId)
+        assertEquals("verify", queue.removeEvent("otp", 3)?.eventId)
+    }
+
+    @Test
     fun removedPendingSourceIsNotRestored() {
         val queue = CapsuleQueueReducer()
         queue.submit(event("telegram", CapsuleKind.NOTIFICATION, 0), 0)

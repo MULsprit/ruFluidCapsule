@@ -1,7 +1,9 @@
 package io.github.venompool888.fluidcapsule
 
 import android.app.Notification
+import android.app.PendingIntent
 import android.app.Person
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
 import android.os.Build
@@ -75,6 +77,77 @@ class PixelNotificationTest {
         assertNull(notification.publicVersion.getLargeIcon())
         assertTrue(notification.hasPromotableCharacteristics())
         assertEquals("解锁后查看", notification.publicVersion.extras.getCharSequence(Notification.EXTRA_TEXT))
+    }
+
+    @Test
+    fun verificationLinkNotificationHasExplicitOpenAction() {
+        val now = System.currentTimeMillis()
+        val notification = NotificationFactory.baseBuilder(context, CapsuleEvent(
+            sourcePackage = "test.only",
+            sourceLabel = "TEST ONLY",
+            eventId = "test-only:verify-link",
+            kind = CapsuleKind.VERIFICATION,
+            title = "验证请求",
+            shortText = "待验证",
+            body = "点击打开验证链接",
+            action = CapsuleAction.OpenVerificationLink("https://example.test/verify?token=fake"),
+            privacy = CapsulePrivacy.HIDE_SENSITIVE,
+            createdAtMillis = now,
+            expiresAtMillis = now + 60_000,
+            dedupeKey = "test-only:verify-link",
+        )).build()
+        assertEquals("打开验证链接", notification.actions.first().title.toString())
+        assertNotNull(notification.contentIntent)
+    }
+
+    @Test
+    fun verificationRequestWithoutVisibleUrlOpensSourceEmail() {
+        val now = System.currentTimeMillis()
+        val original = PendingIntent.getActivity(
+            context,
+            9200,
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationFactory.baseBuilder(context, CapsuleEvent(
+            sourcePackage = "com.google.android.gm",
+            sourceLabel = "Gmail",
+            eventId = "test-only:verify-email",
+            kind = CapsuleKind.VERIFICATION,
+            title = "验证请求 · Gmail",
+            shortText = "待验证",
+            body = "点击查看验证邮件",
+            action = CapsuleAction.OpenOriginal(original),
+            privacy = CapsulePrivacy.HIDE_SENSITIVE,
+            createdAtMillis = now,
+            expiresAtMillis = now + 60_000,
+            dedupeKey = "test-only:verify-email",
+        )).build()
+        assertEquals("查看验证邮件", notification.actions.first().title.toString())
+        assertNotNull(notification.contentIntent)
+    }
+
+    @Test
+    fun otpWithVerificationLinkOffersCopyAndOpenActions() {
+        val now = System.currentTimeMillis()
+        val notification = NotificationFactory.baseBuilder(context, CapsuleEvent(
+            sourcePackage = "test.only",
+            eventId = "test-only:otp-and-link",
+            kind = CapsuleKind.OTP,
+            title = "验证码",
+            shortText = "482913",
+            body = "点击复制",
+            action = CapsuleAction.CopySensitiveText("482913"),
+            privacy = CapsulePrivacy.HIDE_SENSITIVE,
+            createdAtMillis = now,
+            expiresAtMillis = now + 60_000,
+            dedupeKey = "test-only:otp-and-link",
+            verificationUrl = "https://example.test/verify?token=fake",
+        )).build()
+        assertEquals(
+            listOf("复制验证码", "打开验证链接"),
+            notification.actions.map { it.title.toString() },
+        )
     }
 
     private fun messageNotification(latestHasAvatar: Boolean): StatusBarNotification {

@@ -252,4 +252,21 @@ class OtpParserTest {
         val result = OtpParser.parse("请凭取件码 1234-5678 到驿站取货")
         assertEquals(OtpParseResult.None, result)
     }
+
+    @Test
+    fun parsesUnidaysPasscodeWhenRepeatedInEmailPreview() {
+        val result = OtpParser.parse(
+            "482913 is your UNiDAYS passcode\nOne-time passcode\n482913\n" +
+                "Here is your passcode.\nIt will expire in 5 minutes.",
+        )
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
+
+    @Test
+    fun parsesChineseLoginCodeEmail() {
+        val result = OtpParser.parse(
+            "登录代码：482913\n登入代码\n以下是你的登入代码：\n482913\n此代码将很快过期。",
+        )
+        assertEquals("482913", (result as OtpParseResult.Success).code)
+    }
 }

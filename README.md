@@ -11,7 +11,7 @@
 
 Turn Android notifications into interactive live notifications on supported ColorOS and Pixel devices.
 
-将 Android 通知转换为可交互的 ColorOS 流体云或 Pixel 原生实时通知，包括验证码提取、通知白名单、邮箱“仅验证码上云”、原通知跳转和快捷回复。
+将 Android 通知转换为可交互的 ColorOS 流体云或 Pixel 原生实时通知，包括验证码与验证链接识别、通知白名单、邮箱“仅验证码上云”、原通知跳转和快捷回复。
 
 > [!IMPORTANT]
 > FluidCapsule is an independent, unofficial open-source project. It is not affiliated with or endorsed by OPPO, ColorOS, Telegram, WeChat, or any other app vendor.
@@ -26,6 +26,7 @@ Turn Android notifications into interactive live notifications on supported Colo
 - Optionally keep a local notification history. Choose a retention period in days, months, or years, or keep it forever. Turning recording off never deletes existing entries; history can be browsed by time or by folded app groups ordered by notification count.
 - Extract one-time passwords from SMS notifications and display the code directly.
 - Copy an OTP by tapping its capsule, with an optional masked clipboard preview.
+- Recognize explicit email, account, and identity verification requests. A matching URL gets an `Open verification link` action; when the notification exposes no URL, its original destination can be opened instead. Ordinary links are not treated as verification links.
 - Mirror whitelisted notifications with the original app icon, sender avatar, title, and message.
 - Rebuild the observed sequence of successive WeChat and QQ summary updates so multiple messages remain visible in order while the listener stays connected.
 - Keep up to eight pending capsule events in memory. Newer messages preempt the visible slot, while valid earlier messages return after the current event is opened, acted on, removed, or timed out.
@@ -44,6 +45,7 @@ Turn Android notifications into interactive live notifications on supported Colo
 - 可选保存本地通知历史；可按天、月、年设置保留期，也可永久保存。关闭记录不会删除已有内容，支持按时间浏览或按应用通知次数折叠分组。
 - 从短信通知中提取一次性验证码并直接显示。
 - 点击胶囊复制验证码，并可选择隐藏剪贴板预览中的敏感内容。
+- 识别明确的邮箱、账户和身份验证请求；通知含匹配网址时提供“打开验证链接”，没有可见网址时可跳转原通知。普通链接不会被识别成验证链接。
 - 使用原应用图标、发送者头像、标题和正文镜像白名单通知。
 - 在监听器保持连接时，按顺序重建微信和 QQ 连续摘要更新中已观察到的多条消息。
 - 在内存中保留最多 8 个待展示事件；新消息可抢占当前胶囊，有效的旧消息会在当前事件被打开、处理、移除或超时后恢复。
@@ -80,13 +82,13 @@ FluidCapsule 1.x 有意将 `minSdk` 设为 36；旧版 Android 和未经测试�
 
 ### English
 
-FluidCapsule processes notification text locally. The app does not request internet access and does not upload notification content. OTPs and reply text are not written to diagnostic logs. When notification history is enabled, captured text follows the selected day, month, year, or forever policy and can be deleted by entry, app, or in full. Turning recording off does not delete existing entries.
+FluidCapsule processes notification text locally. The app does not request internet access and does not upload notification content. OTPs, verification URLs, and reply text are not written to diagnostic logs. When notification history is enabled, captured text follows the selected day, month, year, or forever policy and can be deleted by entry, app, or in full. Turning recording off does not delete existing entries.
 
 Read [Privacy and security](docs/PRIVACY.md) before enabling notification access, history, or accessibility features.
 
 ### 中文
 
-FluidCapsule 在设备本地处理通知文本，不申请联网权限，也不会上传通知内容。验证码和回复文本不会写入诊断日志。启用通知历史后，已捕获文本遵循用户选择的天、月、年或永久保留策略，并可按单条、应用或全部删除；关闭记录本身不会删除已有历史。
+FluidCapsule 在设备本地处理通知文本，不申请联网权限，也不会上传通知内容。验证码、验证链接和回复文本不会写入诊断日志。启用通知历史后，已捕获文本遵循用户选择的天、月、年或永久保留策略，并可按单条、应用或全部删除；关闭记录本身不会删除已有历史。
 
 启用通知访问、历史记录或无障碍功能前，请阅读[隐私与安全说明](docs/PRIVACY.md)。
 

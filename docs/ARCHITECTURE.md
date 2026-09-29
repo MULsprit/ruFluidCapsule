@@ -7,12 +7,12 @@ FluidCapsule converts source notifications into a small internal event model and
 1. `CapsuleNotificationListenerService` receives posted notifications.
 2. `NotificationNormalizer` extracts stable text, icons, sender information, actions, and the source content intent.
    When notification-history recording is enabled for the source app, the normalized external notification is written to the local history database before whitelist routing. The final local routing decision and explanation are attached to the same row. Updates to the same active notification refresh one history entry; removal closes that notification lifecycle.
-3. `OtpParser` handles likely verification codes before the generic whitelist route.
+3. `OtpParser` handles likely verification codes, and `VerificationLinkParser` checks the current message for an explicit unfinished verification request and a nearby URL, before the generic whitelist route. A request without a visible URL can use the source notification's content intent.
 4. `KnownNotificationAdapter` recognizes LocalSend transfer stages, Meituan order stages, and Speedtest's final `Test Complete` notification. Recognized Meituan marketing notifications are suppressed; Speedtest download and upload results are compacted into one line.
 5. The listener applies user privacy settings and creates a `CapsuleEvent`, optionally including progress.
-6. `CapsuleCoordinator` inserts the event into an in-memory queue and selects one visible winner. OTP events outrank ongoing custom states, which outrank ordinary notifications; events of the same priority use newest-first display.
+6. `CapsuleCoordinator` inserts the event into an in-memory queue and selects one visible winner. OTP events outrank verification requests, which outrank ongoing custom states and ordinary notifications; events of the same priority use newest-first display.
 7. `PublisherRouter` publishes an Android 16 promoted ongoing notification for the supported CPH2797 target.
-8. `NotificationFactory` builds the notification, click action, explicit OTP copy action, forwarded source actions, visible close action plus system-delete fallback, and public lock-screen version.
+8. `NotificationFactory` builds the notification, click action, explicit OTP copy and verification link actions, forwarded source actions, visible close action plus system-delete fallback, and public lock-screen version.
 
 ## Queue and restoration
 
