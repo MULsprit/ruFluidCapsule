@@ -351,11 +351,14 @@ class MainActivity : Activity() {
     private fun showRuleUpdateDialog(manifest: VerifiedManifest) {
         val version = manifest.manifest.version
         promptedRuleVersion = version
+        // Showing the prompt consumes this version, including Back, outside tap,
+        // and an attempted update that fails. The Rules-page button stays usable.
+        ruleGateway.dismiss(version)
         ruleUpdateDialog = AlertDialog.Builder(this)
             .setTitle("有新的规则更新")
             .setMessage("官方规则版本 $version 已可用。是否立即更新？")
             .setPositiveButton("立即更新") { _, _ -> installRuleUpdate(manifest) }
-            .setNegativeButton("稍后") { _, _ -> ruleGateway.dismiss(version) }
+            .setNegativeButton("稍后", null)
             .create().apply {
                 setOnDismissListener { ruleUpdateDialog = null }
                 show()

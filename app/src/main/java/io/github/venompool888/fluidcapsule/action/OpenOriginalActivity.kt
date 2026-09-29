@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import io.github.venompool888.fluidcapsule.publisher.CapsuleCoordinator
+import java.util.Locale
 
 class OpenOriginalActivity : Activity() {
     private var handled = false
@@ -40,8 +41,8 @@ class OpenOriginalActivity : Activity() {
         val verificationUrl = intent.getStringExtra(EXTRA_VERIFICATION_URL)
         try {
             if (intent.action == ACTION_OPEN_VERIFICATION_LINK && verificationUrl != null) {
-                val uri = Uri.parse(verificationUrl)
-                if (uri.scheme == "https" || uri.scheme == "http") {
+                val uri = safeVerificationUri(verificationUrl)
+                if (uri != null) {
                     startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE))
                 } else {
                     openSourceApplication(this, intent)
@@ -93,6 +94,15 @@ class OpenOriginalActivity : Activity() {
     }
 
     companion object {
+        fun safeVerificationUri(url: String): Uri? {
+            val parsed = Uri.parse(url)
+            val scheme = parsed.scheme?.lowercase(Locale.ROOT)
+            if (scheme !in setOf("https", "http") || parsed.host.isNullOrBlank() ||
+                parsed.encodedUserInfo != null
+            ) return null
+            return parsed.buildUpon().scheme(scheme).build()
+        }
+
         const val ACTION_OPEN_ORIGINAL = "io.github.venompool888.fluidcapsule.action.OPEN_ORIGINAL"
         const val ACTION_OPEN_VERIFICATION_LINK = "io.github.venompool888.fluidcapsule.action.OPEN_VERIFICATION_LINK"
         const val EXTRA_ORIGINAL_INTENT = "original_intent"

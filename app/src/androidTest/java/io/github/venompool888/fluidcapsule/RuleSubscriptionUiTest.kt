@@ -69,6 +69,34 @@ class RuleSubscriptionUiTest {
         }
     }
 
+    @Test fun canceledDialogDoesNotReprompt() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            await { fake.checks.get() >= 1 }
+            scenario.onActivity { activity ->
+                (field(activity, "ruleUpdateDialog") as AlertDialog).cancel()
+            }
+            scenario.recreate()
+            await { fake.checks.get() >= 2 }
+            scenario.onActivity { activity -> assertNull(field(activity, "ruleUpdateDialog")) }
+            assertEquals(1, fake.dismissals.get())
+        }
+    }
+
+    @Test fun failedInstallDoesNotReprompt() {
+        fake.failInstall = true
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            await { fake.checks.get() >= 1 }
+            scenario.onActivity { activity ->
+                (field(activity, "ruleUpdateDialog") as AlertDialog)
+                    .getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            }
+            await { fake.installs.get() >= 1 }
+            scenario.recreate()
+            await { fake.checks.get() >= 2 }
+            scenario.onActivity { activity -> assertNull(field(activity, "ruleUpdateDialog")) }
+        }
+    }
+
     @Test fun updateTapInstallsExactlyOnce() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             await { fake.checks.get() >= 1 }
@@ -175,6 +203,7 @@ class RuleSubscriptionUiTest {
         val dismissals = AtomicInteger()
         @Volatile var lastForce = false
         @Volatile var offerUpdate = true
+        @Volatile var failInstall = false
         override fun check(force: Boolean): RuleCheckResult {
             lastForce = force
             checks.incrementAndGet()
@@ -183,7 +212,7 @@ class RuleSubscriptionUiTest {
         }
         override fun install(available: VerifiedManifest): RuleInstallResult {
             installs.incrementAndGet()
-            return RuleInstallResult.Installed(2)
+            return if (failInstall) RuleInstallResult.Failed else RuleInstallResult.Installed(2)
         }
         override fun dismiss(version: Int) { dismissals.incrementAndGet() }
         override fun restoreBuiltIn() = Unit

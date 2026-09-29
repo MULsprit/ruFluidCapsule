@@ -63,6 +63,13 @@ class VerificationLinkParserTest {
     fun rejectsCompletedVerificationAndOrdinaryLinks() {
         listOf(
             "Your email address has been verified.",
+            "How to verify your account: https://example.test/help",
+            "You do not need to verify your account: https://example.test/info",
+            "Please do not verify your account: https://example.test/info",
+            "You no longer need to verify your account: https://example.test/info",
+            "已完成验证邮箱：https://example.test/account",
+            "请勿验证邮箱：https://example.test/account",
+            "邮箱已验证：https://example.test/account",
             "Your package is ready. Track it at https://example.test/track/1234",
             "Read the verification guide at https://example.test/help",
             "https://example.test/verify?token=fake-token",

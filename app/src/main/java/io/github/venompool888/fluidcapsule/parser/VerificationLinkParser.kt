@@ -35,12 +35,24 @@ object VerificationLinkParser {
         RegexOption.IGNORE_CASE,
     )
     private val sentenceBreak = Regex("[.!?。！？]")
+    private val nonRequestLead = Regex(
+        "(?:\\b(?:how\\s+to|learn\\s+to|guide\\s+to|steps\\s+to|" +
+            "do\\s+not(?:\\s+need\\s+to)?|don't(?:\\s+need\\s+to)?|" +
+            "no\\s+(?:longer\\s+)?need\\s+to|never|" +
+            "already|previously)\\b|如何|怎样|怎樣|教程|指南|无需|無需|不必|不用|" +
+            "请勿|請勿|不要|已完成|已经|已經|已)\\s*$",
+        RegexOption.IGNORE_CASE,
+    )
 
     fun parse(text: String, rules: RulePack = RulePack.EMPTY): VerificationLinkRequest? {
         if (text.isBlank()) return null
         if (rules.linkExclusions.any { text.contains(it.phrase, ignoreCase = true) }) return null
-        val requests = requestPatterns.flatMap { it.findAll(text).map { match -> match.range }.toList() } +
-            rules.verificationRequests.flatMap { rule -> literalRanges(text, rule.phrase) }
+        val requests = (requestPatterns.flatMap { it.findAll(text).map { match -> match.range }.toList() } +
+            rules.verificationRequests.flatMap { rule -> literalRanges(text, rule.phrase) })
+            .filter { range ->
+                val lead = text.substring((range.first - 80).coerceAtLeast(0), range.first)
+                !nonRequestLead.containsMatchIn(lead)
+            }
         if (requests.isEmpty()) return null
 
         val matchingUrls = urlPattern.findAll(text)

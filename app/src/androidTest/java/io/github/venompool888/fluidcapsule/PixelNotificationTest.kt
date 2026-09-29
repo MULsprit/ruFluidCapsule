@@ -25,6 +25,16 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PixelNotificationTest {
+    @Test
+    fun uppercaseHttpSchemeIsValidForVerificationAction() {
+        assertEquals("https", io.github.venompool888.fluidcapsule.action.OpenOriginalActivity
+            .safeVerificationUri("HTTPS://example.test/verify")?.scheme)
+        assertEquals("http", io.github.venompool888.fluidcapsule.action.OpenOriginalActivity
+            .safeVerificationUri("HtTp://example.test/verify")?.scheme)
+        assertNull(io.github.venompool888.fluidcapsule.action.OpenOriginalActivity
+            .safeVerificationUri("javascript:alert(1)"))
+    }
+
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
