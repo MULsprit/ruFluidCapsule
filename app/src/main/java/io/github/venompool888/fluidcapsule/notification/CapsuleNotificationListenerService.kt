@@ -18,6 +18,7 @@ import io.github.venompool888.fluidcapsule.parser.OtpParseResult
 import io.github.venompool888.fluidcapsule.parser.OtpParser
 import io.github.venompool888.fluidcapsule.parser.OtpPresentationFormatter
 import io.github.venompool888.fluidcapsule.parser.VerificationLinkParser
+import io.github.venompool888.fluidcapsule.rules.RuleRuntime
 import io.github.venompool888.fluidcapsule.publisher.CapsuleCoordinator
 import io.github.venompool888.fluidcapsule.publisher.PublisherRouter
 import io.github.venompool888.fluidcapsule.settings.NotificationWhitelist
@@ -148,8 +149,9 @@ class CapsuleNotificationListenerService : NotificationListenerService() {
         // Parse only the currently displayed message. Aggregated text can contain the
         // conversation title and stale MessagingStyle messages, which must never become
         // OTP candidates for the latest notification.
-        val otpResult = OtpParser.parse(normalized.primaryText)
-        val verificationRequest = VerificationLinkParser.parse(normalized.primaryText)
+        val rules = RuleRuntime.current(this)
+        val otpResult = OtpParser.parse(normalized.primaryText, rules)
+        val verificationRequest = VerificationLinkParser.parse(normalized.primaryText, rules)
         when (val result = otpResult) {
             is OtpParseResult.Success -> {
                 DiagnosticsStore.markParse(this, "OTP_SUCCESS_${result.confidence}")

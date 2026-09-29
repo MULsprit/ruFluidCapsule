@@ -1,6 +1,7 @@
 package io.github.venompool888.fluidcapsule.rules
 
 import android.content.Context
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.KeyFactory
 import java.security.MessageDigest
 import java.security.PublicKey
@@ -36,7 +37,7 @@ class RuleTrust(private val publicKey: PublicKey) {
         } catch (e: Exception) {
             throw IllegalArgumentException("Invalid signature encoding", e)
         }
-        val verifier = Signature.getInstance("Ed25519")
+        val verifier = Signature.getInstance("Ed25519", BouncyCastleProvider())
         verifier.initVerify(publicKey)
         verifier.update(bytes)
         require(verifier.verify(signatureBytes)) { "Invalid manifest signature" }
@@ -57,7 +58,8 @@ class RuleTrust(private val publicKey: PublicKey) {
     companion object {
         fun official(context: Context): RuleTrust {
             val bytes = context.assets.open("rule_signing_public.der").use { it.readBytes() }
-            val key = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(bytes))
+            val key = KeyFactory.getInstance("Ed25519", BouncyCastleProvider())
+                .generatePublic(X509EncodedKeySpec(bytes))
             return RuleTrust(key)
         }
     }
