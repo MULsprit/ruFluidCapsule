@@ -7,7 +7,7 @@ FluidCapsule converts source notifications into a small internal event model and
 1. `CapsuleNotificationListenerService` receives posted notifications.
 2. `NotificationNormalizer` extracts stable text, icons, sender information, actions, and the source content intent.
    When notification-history recording is enabled for the source app, the normalized external notification is written to the local history database before whitelist routing. The final local routing decision and explanation are attached to the same row. Updates to the same active notification refresh one history entry; removal closes that notification lifecycle.
-3. `OtpParser` handles likely verification codes, and `VerificationLinkParser` checks the current message for an explicit unfinished verification request and a nearby URL, before the generic whitelist route. A request without a visible URL can use the source notification's content intent.
+3. `OtpParser` handles likely verification codes, and `VerificationLinkParser` checks the current message for an explicit unfinished verification request and a nearby URL, before the generic whitelist route. Both receive `RuleRuntime`'s immutable local rule snapshot. A request without a visible URL can use the source notification's content intent.
 4. `KnownNotificationAdapter` recognizes LocalSend transfer stages, Meituan order stages, and Speedtest's final `Test Complete` notification. Recognized Meituan marketing notifications are suppressed; Speedtest download and upload results are compacted into one line.
 5. The listener applies user privacy settings and creates a `CapsuleEvent`, optionally including progress.
 6. `CapsuleCoordinator` inserts the event into an in-memory queue and selects one visible winner. OTP events outrank verification requests, which outrank ongoing custom states and ordinary notifications; events of the same priority use newest-first display.
@@ -42,6 +42,13 @@ The custom reply activity exists because some ColorOS surfaces filter actions th
 - Reply text is forwarded to the original action and is not persisted by FluidCapsule.
 - OTP copy actions place the code in the Android clipboard only after an explicit tap.
 - Speedtest result text comes from its final source notification and is processed in memory like other whitelisted notifications.
+- Current and previous verified rule bundles are stored in app-private atomic files; restoring built-in rules removes only those rule files.
+
+## Rule subscription
+
+`MainActivity` checks a fixed official GitHub HTTPS manifest on foreground entry, with a six-hour cache of the signed manifest. Checks never run from the notification listener or a background worker. The Rules page lets the user disable automatic checks, check manually, install an offered update, or restore the bundled version. An application dialog prompts once per newly offered compatible version; no system notification is posted.
+
+The manifest is verified with the APK-pinned Ed25519 public key. A tap downloads only the versioned pack, checks its SHA-256 digest and strict data-only schema, then atomically activates it. Built-in scoring, exclusions, URL binding, actions, privacy routing, and other algorithms remain in the APK. The app sends no notification or device data to the rule host.
 
 ## Compatibility strategy
 

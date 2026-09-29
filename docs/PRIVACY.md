@@ -6,7 +6,15 @@ FluidCapsule needs powerful Android permissions because its core feature is tran
 
 Notification-listener access allows the app to read notifications, including potentially sensitive message content. FluidCapsule applies the user-selected whitelist to generic notification mirroring and supported result formatting such as Speedtest's final notification; OTP parsing applies to the default SMS application and configured source apps, subject to their rules.
 
-Processing is local. The manifest does not request internet access, and the project contains no analytics or advertising SDK.
+Notification processing stays local. The app requests internet access for official rule updates, and the project contains no analytics or advertising SDK.
+
+## Official rule subscription / 官方规则订阅
+
+The subscription is on by default and can be switched off on the Rules page. When the user opens FluidCapsule, the app may send GET requests to fixed `raw.githubusercontent.com/Venompool888/FluidCapsule/main/rules/stable/` paths to check a signed manifest. It caches a successful check for six hours. A rule pack is fetched only when the user taps update; the app verifies its Ed25519 signature and SHA-256 hash before activation. Prompts appear only inside the app. Restoring built-in rules is available on the same page.
+
+订阅默认开启，可在“规则”页面关闭。打开流体胶囊时，应用可能向固定的官方 GitHub 路径发送 GET 请求检查已签名清单；成功检查会缓存六小时。只有用户点击更新后才会下载规则包，验证签名及哈希后才启用。提醒仅在应用内显示，同页可恢复内置规则。
+
+These requests contain no notification text, codes, verification URLs, device identifiers, history, or installed-app inventory. Rule files contain wording patterns only; notification parsing remains on the device. 请求不包含通知正文、验证码、验证链接、设备标识、历史记录或已安装应用列表；通知解析始终在设备本地进行。
 
 ## Notification history
 

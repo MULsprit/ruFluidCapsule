@@ -82,13 +82,13 @@ FluidCapsule 1.x 有意将 `minSdk` 设为 36；旧版 Android 和未经测试�
 
 ### English
 
-FluidCapsule processes notification text locally. The app does not request internet access and does not upload notification content. OTPs, verification URLs, and reply text are not written to diagnostic logs. When notification history is enabled, captured text follows the selected day, month, year, or forever policy and can be deleted by entry, app, or in full. Turning recording off does not delete existing entries.
+FluidCapsule processes notification text locally and does not upload notification content. It requests internet access only to check the fixed official GitHub rule-subscription files when the app opens; a signed rule pack is downloaded and installed only after a tap. The subscription is on by default and can be disabled on the Rules page. OTPs, verification URLs, and reply text are not written to diagnostic logs. When notification history is enabled, captured text follows the selected day, month, year, or forever policy and can be deleted by entry, app, or in full. Turning recording off does not delete existing entries.
 
 Read [Privacy and security](docs/PRIVACY.md) before enabling notification access, history, or accessibility features.
 
 ### 中文
 
-FluidCapsule 在设备本地处理通知文本，不申请联网权限，也不会上传通知内容。验证码、验证链接和回复文本不会写入诊断日志。启用通知历史后，已捕获文本遵循用户选择的天、月、年或永久保留策略，并可按单条、应用或全部删除；关闭记录本身不会删除已有历史。
+FluidCapsule 在设备本地处理通知文本，不上传通知内容。应用申请联网权限，仅在打开应用时检查固定的官方 GitHub 规则订阅文件；只有点击更新后才会下载并安装已签名的规则包。订阅默认开启，可在“规则”页面关闭。验证码、验证链接和回复文本不会写入诊断日志。启用通知历史后，已捕获文本遵循用户选择的天、月、年或永久保留策略，并可按单条、应用或全部删除；关闭记录本身不会删除已有历史。
 
 启用通知访问、历史记录或无障碍功能前，请阅读[隐私与安全说明](docs/PRIVACY.md)。
 
