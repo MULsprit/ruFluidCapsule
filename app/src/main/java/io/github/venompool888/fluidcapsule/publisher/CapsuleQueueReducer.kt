@@ -59,6 +59,7 @@ internal class CapsuleQueueReducer(
 
     private fun priority(kind: CapsuleKind): Int = when (kind) {
         CapsuleKind.OTP -> 100
+        CapsuleKind.VERIFICATION -> 90
         CapsuleKind.CUSTOM -> 70
         CapsuleKind.NOTIFICATION -> 50
     }

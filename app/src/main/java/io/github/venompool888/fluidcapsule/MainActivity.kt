@@ -55,6 +55,13 @@ import io.github.venompool888.fluidcapsule.history.NotificationHistoryStore
 import io.github.venompool888.fluidcapsule.keepalive.KeepAliveService
 import io.github.venompool888.fluidcapsule.notification.CapsuleNotificationListenerService
 import io.github.venompool888.fluidcapsule.publisher.PublisherRouter
+import io.github.venompool888.fluidcapsule.rules.RuleCheckResult
+import io.github.venompool888.fluidcapsule.rules.RuleInstallResult
+import io.github.venompool888.fluidcapsule.rules.RuleRuntime
+import io.github.venompool888.fluidcapsule.rules.RuleSubscriptionPrefs
+import io.github.venompool888.fluidcapsule.rules.RuleUpdateGateway
+import io.github.venompool888.fluidcapsule.rules.RuleUpdateGatewayProvider
+import io.github.venompool888.fluidcapsule.rules.VerifiedManifest
 import io.github.venompool888.fluidcapsule.settings.CapsuleDisplayDuration
 import io.github.venompool888.fluidcapsule.settings.HistoryRetentionPolicy
 import io.github.venompool888.fluidcapsule.settings.HistoryRetentionUnit
@@ -97,6 +104,16 @@ class MainActivity : Activity() {
     private var historySortMode = HistorySortMode.TIME
     private var expandedHistoryPackage: String? = null
     private val historyIconLoader = Executors.newFixedThreadPool(2)
+    private val rulesExecutor = Executors.newSingleThreadExecutor()
+    private lateinit var ruleGateway: RuleUpdateGateway
+    private lateinit var rulePrefs: RuleSubscriptionPrefs
+    private lateinit var rulesVersionView: TextView
+    private lateinit var rulesStatusView: TextView
+    private lateinit var rulesUpdateButton: Button
+    private var availableRuleManifest: VerifiedManifest? = null
+    private var ruleUpdateDialog: AlertDialog? = null
+    private var rulesCheckInFlight = false
+    private var promptedRuleVersion = 0
     private val historyIconHandler = Handler(Looper.getMainLooper())
     private val historyIconRequests = ConcurrentHashMap.newKeySet<String>()
     private val historyIconCache = object : android.util.LruCache<String, Drawable>(96) {}
@@ -107,6 +124,8 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        rulePrefs = RuleSubscriptionPrefs(this)
+        ruleGateway = RuleUpdateGatewayProvider.create(this)
         title = "流体胶囊"
         configureSystemBars()
 
@@ -183,10 +202,13 @@ class MainActivity : Activity() {
         super.onResume()
         refreshStatus()
         if (currentPage == Page.HISTORY) refreshHistory()
+        if (rulePrefs.subscriptionEnabled) checkRuleUpdates(false)
     }
 
     override fun onDestroy() {
         historyIconLoader.shutdownNow()
+        rulesExecutor.shutdownNow()
+        ruleUpdateDialog?.dismiss()
         super.onDestroy()
     }
 
@@ -214,6 +236,9 @@ class MainActivity : Activity() {
     private fun buildRulesPage(): View {
         val content = pageContent()
         content.addPageHeader("规则", "通知来源、显示时长与隐私")
+
+        addSectionLabel(content, "规则订阅", "只从官方 GitHub 获取已签名的识别词条")
+        content.addView(buildRuleSubscriptionCard(), matchWidthWrapHeight())
 
         addSectionLabel(content, "通知来源", "选择允许转换为实时通知的应用")
         content.addView(buildWhitelistManagementCard(), matchWidthWrapHeight())
@@ -253,6 +278,128 @@ class MainActivity : Activity() {
         }
         content.addView(privacyCard, matchWidthWrapHeight().apply { bottomMargin = dp(8) })
         return scrollPage(content)
+    }
+
+    private fun buildRuleSubscriptionCard(): View = card().apply {
+        addSettingRow(
+            title = "订阅规则更新",
+            summary = "默认开启；进入流体胶囊时检查，有新版本时在应用内提示",
+            checked = rulePrefs.subscriptionEnabled,
+        ) { enabled ->
+            rulePrefs.subscriptionEnabled = enabled
+            rulesStatusView.text = if (enabled) "已开启规则订阅" else "已关闭自动检查；仍可手动检查"
+            if (enabled) checkRuleUpdates(false)
+        }
+        rulesVersionView = TextView(this@MainActivity).apply {
+            text = "已安装规则：${RuleRuntime.current(this@MainActivity).version} · 官方 GitHub"
+            textSize = 14f
+            setTextColor(COLOR_TEXT_PRIMARY)
+            setPadding(dp(5), dp(12), dp(5), dp(3))
+        }
+        addView(rulesVersionView, matchWidthWrapHeight())
+        rulesStatusView = TextView(this@MainActivity).apply {
+            text = "上次检查：尚未检查"
+            textSize = 12f
+            setTextColor(COLOR_TEXT_TERTIARY)
+            setPadding(dp(5), dp(2), dp(5), dp(8))
+        }
+        addView(rulesStatusView, matchWidthWrapHeight())
+        addActionButton("检查规则更新", ButtonTone.PRIMARY) { checkRuleUpdates(true) }
+        rulesUpdateButton = addActionButton("更新规则") {
+            availableRuleManifest?.let(::installRuleUpdate)
+        }.apply { isEnabled = false }
+        addActionButton("恢复内置规则", ButtonTone.QUIET) { restoreBuiltInRules() }
+    }
+
+    private fun checkRuleUpdates(force: Boolean) {
+        if (rulesCheckInFlight || (!force && !rulePrefs.subscriptionEnabled)) return
+        rulesCheckInFlight = true
+        rulesStatusView.text = "正在检查规则…"
+        rulesExecutor.execute {
+            val result = runCatching { ruleGateway.check(force) }.getOrDefault(RuleCheckResult.Failed)
+            runOnUiThread {
+                rulesCheckInFlight = false
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                when (result) {
+                    is RuleCheckResult.Available -> {
+                        availableRuleManifest = result.manifest
+                        rulesStatusView.text = "发现规则版本 ${result.manifest.manifest.version}"
+                        rulesUpdateButton.text = "更新到规则 ${result.manifest.manifest.version}"
+                        rulesUpdateButton.isEnabled = true
+                        if (result.shouldPrompt && rulePrefs.subscriptionEnabled && !force &&
+                            promptedRuleVersion != result.manifest.manifest.version &&
+                            ruleUpdateDialog?.isShowing != true
+                        ) showRuleUpdateDialog(result.manifest)
+                    }
+                    is RuleCheckResult.UpToDate -> {
+                        availableRuleManifest = null
+                        rulesUpdateButton.isEnabled = false
+                        rulesStatusView.text = "规则已是最新版本"
+                        rulesVersionView.text = "已安装规则：${result.version} · 官方 GitHub"
+                    }
+                    is RuleCheckResult.Incompatible -> {
+                        rulesStatusView.text = "规则 ${result.version} 需要更新的应用版本"
+                    }
+                    RuleCheckResult.Offline -> rulesStatusView.text = "离线，稍后可重试"
+                    RuleCheckResult.Failed -> rulesStatusView.text = "检查失败，请稍后重试"
+                    RuleCheckResult.Disabled -> rulesStatusView.text = "已关闭自动检查"
+                }
+            }
+        }
+    }
+
+    private fun showRuleUpdateDialog(manifest: VerifiedManifest) {
+        val version = manifest.manifest.version
+        promptedRuleVersion = version
+        // Showing the prompt consumes this version, including Back, outside tap,
+        // and an attempted update that fails. The Rules-page button stays usable.
+        ruleGateway.dismiss(version)
+        ruleUpdateDialog = AlertDialog.Builder(this)
+            .setTitle("有新的规则更新")
+            .setMessage("官方规则版本 $version 已可用。是否立即更新？")
+            .setPositiveButton("立即更新") { _, _ -> installRuleUpdate(manifest) }
+            .setNegativeButton("稍后", null)
+            .create().apply {
+                setOnDismissListener { ruleUpdateDialog = null }
+                show()
+            }
+    }
+
+    private fun installRuleUpdate(manifest: VerifiedManifest) {
+        rulesUpdateButton.isEnabled = false
+        rulesStatusView.text = "正在验证并安装规则…"
+        rulesExecutor.execute {
+            val result = runCatching { ruleGateway.install(manifest) }.getOrDefault(RuleInstallResult.Failed)
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                when (result) {
+                    is RuleInstallResult.Installed -> {
+                        availableRuleManifest = null
+                        rulesVersionView.text = "已安装规则：${result.version} · 官方 GitHub"
+                        rulesStatusView.text = "规则已更新"
+                    }
+                    RuleInstallResult.Incompatible -> rulesStatusView.text = "当前应用版本无法安装此规则"
+                    RuleInstallResult.Failed -> rulesStatusView.text = "更新失败，原有规则仍可使用"
+                }
+                rulesUpdateButton.isEnabled = result !is RuleInstallResult.Installed && availableRuleManifest != null
+            }
+        }
+    }
+
+    private fun restoreBuiltInRules() {
+        rulesStatusView.text = "正在恢复内置规则…"
+        rulesExecutor.execute {
+            val success = runCatching { ruleGateway.restoreBuiltIn() }.isSuccess
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (success) {
+                    availableRuleManifest = null
+                    rulesVersionView.text = "已安装规则：1 · 内置规则"
+                    rulesUpdateButton.isEnabled = false
+                }
+                rulesStatusView.text = if (success) "已恢复内置规则" else "恢复失败，请重试"
+            }
+        }
     }
 
     private fun buildBackendPage(): View {

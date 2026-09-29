@@ -31,7 +31,7 @@ object AospLiveUpdatePublisher : CapsulePublisher {
                     .setStyledByProgress(false)
                     .setProgress(current),
             )
-        } else if (event.kind == CapsuleKind.OTP) {
+        } else if (event.kind == CapsuleKind.OTP || event.kind == CapsuleKind.VERIFICATION) {
             builder.setProgress(100, 100, false)
                 .setStyle(
                     Notification.ProgressStyle()

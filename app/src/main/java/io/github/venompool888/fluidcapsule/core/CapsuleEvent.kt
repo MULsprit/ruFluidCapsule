@@ -24,10 +24,12 @@ data class CapsuleEvent(
     val progressMax: Int = 100,
     val progressIndeterminate: Boolean = false,
     val priorityAdjustment: Int = 0,
+    val verificationUrl: String? = null,
 )
 
 enum class CapsuleKind {
     OTP,
+    VERIFICATION,
     NOTIFICATION,
     CUSTOM,
 }
@@ -39,6 +41,7 @@ enum class CapsulePrivacy {
 
 sealed interface CapsuleAction {
     data class CopySensitiveText(val value: String) : CapsuleAction
+    data class OpenVerificationLink(val url: String) : CapsuleAction
     data class OpenOriginal(val pendingIntent: android.app.PendingIntent) : CapsuleAction
     data object None : CapsuleAction
 }

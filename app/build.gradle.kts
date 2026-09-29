@@ -10,8 +10,8 @@ android {
         applicationId = "io.github.venompool888.fluidcapsule"
         minSdk = 36
         targetSdk = 36
-        versionCode = 37
-        versionName = "1.1.2"
+        versionCode = 38
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -60,7 +60,9 @@ kotlin {
 }
 
 dependencies {
+    implementation("org.bouncycastle:bcprov-jdk18on:1.86")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
 }
