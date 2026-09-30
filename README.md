@@ -2,169 +2,170 @@
   <img src="design/logo-v3/icon-fluidcapsule-v3-preview.png" width="300" alt="FluidCapsule Logo / 流体胶囊 Logo">
 </p>
 
-<h1 align="center">流体胶囊 · FluidCapsule</h1>
+<h1 align="center">FluidCapsule</h1>
 
 <p align="center">
-  <strong>在 ColorOS 和 Pixel 上提供可交互的原生实时通知。</strong><br>
+  <strong> ColorOS Pixel </strong><br>
   <strong>Interactive native live notifications on ColorOS and Pixel.</strong>
 </p>
-
 Turn Android notifications into interactive live notifications on supported ColorOS and Pixel devices.
 
-将 Android 通知转换为可交互的 ColorOS 流体云或 Pixel 原生实时通知，包括验证码与验证链接识别、通知白名单、邮箱“仅验证码上云”、原通知跳转和快捷回复。
+Преобразует уведомления Android в интерактивные живые оповещения ColorOS Fluid Cloud или нативные живые уведомления Pixel, включая распознавание кодов подтверждения и ссылок верификации, белый список уведомлений, режим «Только коды для почты», переход к исходному уведомлению и быстрый ответ.
 
 > [!IMPORTANT]
 > FluidCapsule is an independent, unofficial open-source project. It is not affiliated with or endorsed by OPPO, ColorOS, Telegram, WeChat, or any other app vendor.
->
-> FluidCapsule 是独立的非官方开源项目，与 OPPO、ColorOS、Telegram、微信或其他应用厂商不存在隶属、授权或背书关系。
+> FluidCapsule — независимый неофициальный проект с открытым исходным кодом. Он не связан, не авторизован и не одобрен OPPO, ColorOS, Telegram, WeChat или любыми другими разработчиками приложений.
 
-## Features / 功能
-
-### English
-
-- Listen for notifications from user-selected apps.
-- Optionally keep a local notification history. Choose a retention period in days, months, or years, or keep it forever. Turning recording off never deletes existing entries; history can be browsed by time or by folded app groups ordered by notification count.
-- Extract one-time passwords from SMS notifications and display the code directly.
-- Copy an OTP by tapping its capsule, with an optional masked clipboard preview.
-- Recognize explicit email, account, and identity verification requests. A matching URL gets an `Open verification link` action; when the notification exposes no URL, its original destination can be opened instead. Ordinary links are not treated as verification links.
-- Mirror whitelisted notifications with the original app icon, sender avatar, title, and message.
-- Rebuild the observed sequence of successive WeChat and QQ summary updates so multiple messages remain visible in order while the listener stays connected.
-- Keep up to eight pending capsule events in memory. Newer messages preempt the visible slot, while valid earlier messages return after the current event is opened, acted on, removed, or timed out.
-- Open the source notification and, when it exposes Android `RemoteInput`, forward reply and mark-as-read actions.
-- Add `Open reply` for actionless WeChat/QQ messages and a distinct trash-icon `Close` action that also dismisses the matching source notification from the notification shade.
-- Show one-tap smart replies and adapt the reply panel accent color to the source app icon.
-- Choose a light, dark, or system-following app appearance.
-- Turn LocalSend transfers and Meituan order updates into progress-aware capsules while filtering recognized Meituan promotions.
-- Reformat Speedtest's final `Test Complete` notification so download and upload results remain visible on one line.
-- Configure every user-facing setting through an ADB-friendly CLI, including per-app rules and history retention.
-- Keep notification processing available with explicit foreground-service and accessibility options.
-
-### 中文
-
-- 监听用户主动选择的应用通知。
-- 可选保存本地通知历史；可按天、月、年设置保留期，也可永久保存。关闭记录不会删除已有内容，支持按时间浏览或按应用通知次数折叠分组。
-- 从短信通知中提取一次性验证码并直接显示。
-- 点击胶囊复制验证码，并可选择隐藏剪贴板预览中的敏感内容。
-- 识别明确的邮箱、账户和身份验证请求；通知含匹配网址时提供“打开验证链接”，没有可见网址时可跳转原通知。普通链接不会被识别成验证链接。
-- 使用原应用图标、发送者头像、标题和正文镜像白名单通知。
-- 在监听器保持连接时，按顺序重建微信和 QQ 连续摘要更新中已观察到的多条消息。
-- 在内存中保留最多 8 个待展示事件；新消息可抢占当前胶囊，有效的旧消息会在当前事件被打开、处理、移除或超时后恢复。
-- 打开原通知；当来源提供 Android `RemoteInput` 时，转发回复和标记已读操作。
-- 为没有原生 action 的微信/QQ 消息提供“打开回复”，并提供带独立垃圾桶图标的“关闭”，同时从下拉通知栏撤销对应来源通知。
-- 提供一键智能回复，并根据来源应用图标调整回复面板的强调色。
-- 支持浅色、深色或跟随系统的应用外观。
-- 将 LocalSend 传输和美团订单更新转换为带进度的胶囊，同时过滤已识别的美团推广通知。
-- 重新整理 Speedtest 最终 `Test Complete` 通知，使下载与上传结果能在一行内完整显示。
-- 通过适合 ADB 使用的 CLI 配置全部用户设置，包括单应用规则和历史保留期。
-- 提供明确的前台服务与无障碍保活选项，帮助通知处理持续运行。
-
-## Platform support / 平台支持
+## Features / Функции
 
 ### English
 
-- Additional verified device: Pixel 11 Pro XL, Android 17 / API 37; see [Pixel notes](docs/PIXEL.md).
-- Supported device: OPPO CPH2797 running Android 16 / API 36.
-- Verified firmware baseline: `CPH2797_16.0.9.400(EX01)`.
-- Promoted/live notifications must be enabled. The operating system owns the final live-notification rendering and may change it in a firmware update.
+* Listen for notifications from user-selected apps.
+* Optionally keep a local notification history. Choose a retention period in days, months, or years, or keep it forever. Turning recording off never deletes existing entries; history can be browsed by time or by folded app groups ordered by notification count.
+* Extract one-time passwords from SMS notifications and display the code directly.
+* Copy an OTP by tapping its capsule, with an optional masked clipboard preview.
+* Recognize explicit email, account, and identity verification requests. A matching URL gets an `Open verification link` action; when the notification exposes no URL, its original destination can be opened instead. Ordinary links are not treated as verification links.
+* Mirror whitelisted notifications with the original app icon, sender avatar, title, and message.
+* Rebuild the observed sequence of successive WeChat and QQ summary updates so multiple messages remain visible in order while the listener stays connected.
+* Keep up to eight pending capsule events in memory. Newer messages preempt the visible slot, while valid earlier messages return after the current event is opened, acted on, removed, or timed out.
+* Open the source notification and, when it exposes Android `RemoteInput`, forward reply and mark-as-read actions.
+* Add `Open reply` for actionless WeChat/QQ messages and a distinct trash-icon `Close` action that also dismisses the matching source notification from the notification shade.
+* Show one-tap smart replies and adapt the reply panel accent color to the source app icon.
+* Choose a light, dark, or system-following app appearance.
+* Turn LocalSend transfers and Meituan order updates into progress-aware capsules while filtering recognized Meituan promotions.
+* Reformat Speedtest's final `Test Complete` notification so download and upload results remain visible on one line.
+* Configure every user-facing setting through an ADB-friendly CLI, including per-app rules and history retention.
+* Keep notification processing available with explicit foreground-service and accessibility options.
+
+### Русский
+
+* Отслеживание уведомлений от приложений, выбранных пользователем.
+* Возможность сохранения локальной истории уведомлений: выбор срока хранения в днях, месяцах, годах или бессрочно. Отключение записи не удаляет уже сохранённые записи; поддерживается просмотр по времени или по свёрнутым группам приложений с сортировкой по количеству уведомлений.
+* Извлечение одноразовых паролей из SMS-уведомлений и их прямое отображение.
+* Копирование кода подтверждения нажатием на капсулу с опциональной маскировкой предпросмотра в буфере обмена.
+* Распознавание явных запросов подтверждения для почты, аккаунтов и личности. При наличии ссылки добавляется действие «Открыть ссылку подтверждения»; если ссылка не указана, можно открыть исходное уведомление. Обычные ссылки не считаются ссылками подтверждения.
+* Дублирование уведомлений из белого списка с сохранением исходной иконки приложения, аватара отправителя, заголовка и текста сообщения.
+* Восстановление наблюдаемой последовательности цепочек сообщений WeChat и QQ для корректного поочерёдного отображения нескольких сообщений, пока служба прослушивания активна.
+* Сохранение в памяти до 8 ожидающих событий капсул; новые сообщения временно занимают активный слот, а актуальные предыдущие сообщения возвращаются после открытия, обработки, удаления или истечения времени текущего события.
+* Открытие исходного уведомления; пересылка ответов и действий «Отметить как прочитанное», если источник поддерживает Android `RemoteInput`.
+* Добавление кнопки «Открыть ответ» для сообщений WeChat/QQ без встроенных действий, а также отдельной кнопки «Закрыть» с иконкой корзины, которая также удаляет соответствующее исходное уведомление из шторки.
+* Быстрые умные ответы в одно касание и адаптация акцентного цвета панели ответов под цвет иконки приложения-источника.
+* Поддержка светлой, тёмной и системной темы оформления интерфейса.
+* Преобразование передачи файлов LocalSend и статусов заказов Meituan в капсулы с индикатором прогресса с фильтрацией распознанной рекламы Meituan.
+* Переформатирование финального уведомления Speedtest `Test Complete` для отображения результатов загрузки и отдачи в одну строку.
+* Настройка всех пользовательских параметров через удобный для ADB консольный интерфейс (CLI), включая правила для отдельных приложений и сроки хранения истории.
+* Явные параметры работы в приоритетном режиме (foreground service) и служб специальных возможностей (accessibility) для стабильной работы службы обработки уведомлений в фоне.
+
+## Platform support / Поддержка платформ
+
+### English
+
+* Additional verified device: Pixel 11 Pro XL, Android 17 / API 37; see [Pixel notes](https://www.google.com/search?q=docs/PIXEL.md).
+* Supported device: OPPO CPH2797 running Android 16 / API 36.
+* Verified firmware baseline: `CPH2797_16.0.9.400(EX01)`.
+* Promoted/live notifications must be enabled. The operating system owns the final live-notification rendering and may change it in a firmware update.
 
 FluidCapsule 1.x intentionally sets `minSdk = 36`. Older Android versions and untested devices are outside the verified scope.
 
-### 中文
+### Русский
 
-- 新增验证设备：Pixel 11 Pro XL，Android 17 / API 37；详见 [Pixel 说明](docs/PIXEL.md)。
-- 支持设备：运行 Android 16 / API 36 的 OPPO CPH2797。
-- 已验证固件基线：`CPH2797_16.0.9.400(EX01)`。
-- 必须启用实时通知提升/流体云通知。最终实时通知由操作系统渲染，系统固件更新可能改变其行为。
+* Дополнительно протестированное устройство: Pixel 11 Pro XL, Android 17 / API 37; см. [заметки по Pixel](https://www.google.com/search?q=docs/PIXEL.md).
+* Поддерживаемое устройство: OPPO CPH2797 под управлением Android 16 / API 36.
+* Проверенная базовая сборка прошивки: `CPH2797_16.0.9.400(EX01)`.
+* Требуется включить закреплённые/живые оповещения. Окончательная отрисовка живых оповещений выполняется операционной системой, и её поведение может меняться при обновлениях прошивки.
 
-FluidCapsule 1.x 有意将 `minSdk` 设为 36；旧版 Android 和未经测试的设备不在已验证范围内。
+В FluidCapsule 1.x параметр `minSdk` намеренно установлен на значение 36; старые версии Android и непротестированные устройства не входят в рамки гарантированной совместимости.
 
-## Privacy model / 隐私模型
+## Privacy model / Политика конфиденциальности
 
 ### English
 
 FluidCapsule processes notification text locally and does not upload notification content. It requests internet access only to check the fixed official GitHub rule-subscription files when the app opens; a signed rule pack is downloaded and installed only after a tap. The subscription is on by default and can be disabled on the Rules page. OTPs, verification URLs, and reply text are not written to diagnostic logs. When notification history is enabled, captured text follows the selected day, month, year, or forever policy and can be deleted by entry, app, or in full. Turning recording off does not delete existing entries.
 
-Read [Privacy and security](docs/PRIVACY.md) before enabling notification access, history, or accessibility features.
+Read [Privacy and security](https://www.google.com/search?q=docs/PRIVACY.md) before enabling notification access, history, or accessibility features.
 
-### 中文
+### Русский
 
-FluidCapsule 在设备本地处理通知文本，不上传通知内容。应用申请联网权限，仅在打开应用时检查固定的官方 GitHub 规则订阅文件；只有点击更新后才会下载并安装已签名的规则包。订阅默认开启，可在“规则”页面关闭。验证码、验证链接和回复文本不会写入诊断日志。启用通知历史后，已捕获文本遵循用户选择的天、月、年或永久保留策略，并可按单条、应用或全部删除；关闭记录本身不会删除已有历史。
+FluidCapsule обрабатывает текст уведомлений локально на устройстве и не выгружает их содержимое в сеть. Приложение запрашивает доступ к интернету исключительно для проверки фиксированных официальных файлов подписки на правила на GitHub при запуске; подписанный пакет правил скачивается и устанавливается только после явного нажатия пользователем. Подписка включена по умолчанию и может быть отключена на странице «Правила». Одноразовые коды, ссылки подтверждения и тексты ответов не записываются в диагностические логи. При включённой истории уведомлений перехваченный текст хранится в соответствии с выбранным правилом (дни, месяцы, годы или бессрочно) и может быть удалён по отдельным записям, по приложениям или полностью; отключение самой записи не удаляет уже существующую историю.
 
-启用通知访问、历史记录或无障碍功能前，请阅读[隐私与安全说明](docs/PRIVACY.md)。
+Перед включением доступа к уведомлениям, истории или службам специальных возможностей ознакомьтесь с документом [Конфиденциальность и безопасность](https://www.google.com/search?q=docs/PRIVACY.md).
 
-## Storage estimate / 存储体积估算
+## Storage estimate / Расчёт объёма хранилища
 
 ### English
 
 On the verified OPPO snapshot from 11 August 2026, 758 notification records occupied 663,552 bytes (0.63 MiB) in the SQLite database, or about 875 bytes per record including the current indexes and allocated pages. Using the current seven-day count as a steady-rate approximation gives about 108 records per day.
 
 | Retention horizon | Approximate records | Linear database estimate | Conservative planning allowance |
-| --- | ---: | ---: | ---: |
+| --- | --- | --- | --- |
 | 1 year | 39,500 | 33 MiB | about 50 MiB |
 | 3 years | 118,500 | 99 MiB | about 150 MiB |
 | 10 years | 395,000 | 330 MiB | about 500 MiB |
 
 At the current volume, even permanent retention is unlikely to cause severe database growth. Notification volume and message length can change, and SQLite may keep allocated pages after records are deleted, so these figures are capacity estimates rather than a storage guarantee. The more important trade-off for permanent retention is privacy: old notification text remains readable on the device until it is manually deleted or app data is cleared.
 
-### 中文
+### Русский
 
-在 2026 年 8 月 11 日验证的 OPPO 快照中，758 条通知记录占用 663,552 字节（0.63 MiB）的 SQLite 数据库空间；把现有索引和已分配页面都算进去，平均约 875 字节/条。以当前 7 天记录量近似为稳定速率，约为每天 108 条。
+На проверенном слепке данных OPPO от 11 августа 2026 года 758 записей уведомлений занимали в базе данных SQLite 663 552 байта (0,63 МиБ); с учётом существующих индексов и выделенных страниц это составляет в среднем около 875 байт на запись. Экстраполируя текущий объём за 7 дней как стабильное среднее значение, получаем около 108 записей в день.
 
-| 保留时长 | 预计记录数 | 线性数据库估算 | 保守预留空间 |
-| --- | ---: | ---: | ---: |
-| 1 年 | 39,500 | 33 MiB | 约 50 MiB |
-| 3 年 | 118,500 | 99 MiB | 约 150 MiB |
-| 10 年 | 395,000 | 330 MiB | 约 500 MiB |
+| Срок хранения | Ожидаемое число записей | Линейная оценка размера БД | Консервативный запас объёма |
+| --- | --- | --- | --- |
+| 1 год | 39 500 | 33 МиБ | около 50 МиБ |
+| 3 года | 118 500 | 99 МиБ | около 150 МиБ |
+| 10 лет | 395 000 | 330 МиБ | около 500 МиБ |
 
-按照目前的通知量，即使选择永久保存，也不太可能造成非常严重的数据库膨胀。通知数量和正文长度以后可能变化，而且 SQLite 删除记录后可能继续保留已分配页面，因此这些数字是容量估算，并非存储承诺。永久保存更需要注意的是隐私：旧通知正文会一直留在设备上，直到手动删除或清除应用数据。
+При текущей интенсивности уведомлений даже бессрочное хранение едва ли приведёт к чрезмерному разрастанию базы данных. Объём уведомлений и длина текста могут со временем меняться, кроме того, SQLite может удерживать выделенные страницы после удаления записей, поэтому данные значения являются предварительной оценкой, а не гарантией ёмкости. Главный фактор при бессрочном хранении — это конфиденциальность: текст старых уведомлений остаётся доступным на устройстве до момента их ручного удаления или очистки данных приложения.
 
-## Build / 构建
+## Build / Сборка
 
-### Requirements / 环境要求
+### Requirements / Требования к окружению
 
-- Android SDK 36
-- JDK 21
-- Android platform-tools（用于 ADB 命令 / for ADB commands）
+* Android SDK 36
+* JDK 21
+* Android platform-tools（для команд ADB / for ADB commands）
 
-Build, test, lint, and install the debug APK / 构建、测试、Lint 并安装 debug APK：
+Build, test, lint, and install the debug APK / Сборка, тестирование, проверка Lint и установка отладочного APK:
 
 ```bash
 ./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
+
 ```
 
-Run the eight CPH2797 instrumentation checks / 运行 8 项 CPH2797 仪器测试：
+Run the eight CPH2797 instrumentation checks / Запуск 8 инструментальных тестов для CPH2797:
 
 ```bash
 adb -s SERIAL install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb -s SERIAL shell am instrument -w \
   io.github.venompool888.fluidcapsule.test/androidx.test.runner.AndroidJUnitRunner
 ./scripts/verify-cph2797.sh --serial SERIAL
+
 ```
 
 The signed release build uses a keystore outside the repository and a password stored in macOS Keychain.
 
-正式签名构建使用仓库外的 keystore，密码存放在 macOS 钥匙串中。
+Для релизной сборки с подписью используется хранилище ключей (keystore) вне репозитория, пароль к которому хранится в связке ключей macOS Keychain.
 
 ```bash
 ./scripts/build-release.sh
+
 ```
 
 The output is `app/build/outputs/apk/release/app-release.apk`. APKs and signing material are intentionally excluded from Git.
 
-输出文件为 `app/build/outputs/apk/release/app-release.apk`。APK 与签名材料均有意排除在 Git 仓库之外。
+Итоговым файлом сборки является `app/build/outputs/apk/release/app-release.apk`. Файлы APK и материалы подписи намеренно исключены из репозитория Git.
 
-## Upgrade / 覆盖升级
+## Upgrade / Обновление
 
 Download the signed APK from [Releases](https://github.com/Venompool888/FluidCapsule/releases) and install it over the existing release. The package name and release signing key stay the same, so settings and local history are retained. Do not uninstall or clear app data when upgrading. A debug APK uses a different signing key and cannot replace a release installation.
 
-从 [Releases](https://github.com/Venompool888/FluidCapsule/releases) 下载正式签名 APK，直接覆盖安装。包名与正式签名保持一致，原设置和本地通知历史会保留，包括已选择的永久保留策略。升级时不要卸载应用或清除数据；debug APK 的签名不同，不能覆盖正式版。
+Скачайте подписанный релизный APK из раздела [Releases](https://github.com/Venompool888/FluidCapsule/releases) и установите поверх существующей версии. Имя пакета и ключ подписи остаются прежними, поэтому все параметры и локальная история уведомлений сохранятся (включая выбранное бессрочное хранение). При обновлении не удаляйте приложение и не очищайте данные; отладочный APK подписан другим ключом и не может быть установлен поверх релизной версии.
 
-Protected ADB history export is documented in [CLI](docs/CLI.md). Exported files contain complete notification text and should remain private.
+Protected ADB history export is documented in [CLI](https://www.google.com/search?q=docs/CLI.md). Exported files contain complete notification text and should remain private.
 
-受权限保护的 ADB 历史导出见 [CLI](docs/CLI.md)。导出文件包含完整通知正文，请私下保存。
+Защищённый экспорт истории через ADB описан в разделе [CLI](https://www.google.com/search?q=docs/CLI.md). Экспортированные файлы содержат полный текст уведомлений и должны храниться конфиденциально.
 
-## Initial setup / 初始设置
+## Initial setup / Начальная настройка
 
 ### English
 
@@ -174,89 +175,90 @@ Protected ADB history export is documented in [CLI](docs/CLI.md). Exported files
 4. Allow promoted/live notifications for FluidCapsule on the supported ColorOS or Pixel version.
 5. Optionally enable the explicit keep-alive controls if the system stops the listener in the background.
 
-### 中文
+### Русский
 
-1. 安装并打开 FluidCapsule。
-2. 授予通知读取与通知发布权限。
-3. 在通知白名单中选择可信的来源应用。
-4. 在受支持的 ColorOS 或 Pixel 版本上允许 FluidCapsule 使用实时通知提升/流体云通知。
-5. 如果系统会在后台停止监听服务，可按需启用明确提供的保活选项。
+1. Установите и откройте FluidCapsule.
+2. Предоставьте разрешения на доступ к чтению и отправке уведомлений.
+3. Добавьте доверенные приложения-источники в белый список уведомлений.
+4. Включите отображение живых оповещений для FluidCapsule в настройках поддерживаемой версии ColorOS или Pixel.
+5. При необходимости включите опции поддержания фоновой активности, если система закрывает службу прослушивания в фоне.
 
-For repeatable device configuration, see [ADB CLI](docs/CLI.md).
+For repeatable device configuration, see [ADB CLI](https://www.google.com/search?q=docs/CLI.md).
 
-如需可重复执行的设备配置流程，请参阅 [ADB CLI](docs/CLI.md)。
+Инструкции по быстрой и воспроизводимой настройке через консоль приведены в [ADB CLI](https://www.google.com/search?q=docs/CLI.md).
 
-## How it works / 工作原理
+## How it works / Принцип работы
 
 ```text
 Source notification / explicitly supported foreground status
-来源通知 / 明确支持的前台状态
+Исходное уведомление / явно поддерживаемый статус на переднем плане
         ↓
 NotificationListenerService / package-scoped accessibility adapter
-通知监听服务 / 限定应用包的无障碍适配器
+Служба чтения уведомлений / адаптер специальных возможностей с привязкой к пакетам
         ↓
 Normalize → OTP parser / known-app adapter / whitelist policy
-标准化 → 验证码解析器 / 已知应用适配器 / 白名单策略
+Нормализация → парсер OTP / адаптер известных приложений / белый список
         ↓
-CapsuleEvent / 胶囊事件
+CapsuleEvent / событие капсулы
         ↓
 In-memory priority queue → one visible capsule slot
-内存优先级队列 → 单个可见胶囊槽位
+Очередь приоритетов в памяти → один активный слот капсулы
         ↓
 Android 16 promoted ongoing notification
-Android 16 实时提升的持续通知
+Продвигаемое закреплённое уведомление Android 16
+
 ```
 
-More detail is available in [Architecture](docs/ARCHITECTURE.md) and [ColorOS notes](docs/COLOROS.md).
+More detail is available in [Architecture](https://www.google.com/search?q=docs/ARCHITECTURE.md) and [ColorOS notes](https://www.google.com/search?q=docs/COLOROS.md).
 
-更多细节请参阅[架构说明](docs/ARCHITECTURE.md)和 [ColorOS 说明](docs/COLOROS.md)。
+Подробная информация доступна в [описании архитектуры](https://www.google.com/search?q=docs/ARCHITECTURE.md) и [заметках по ColorOS](https://www.google.com/search?q=docs/COLOROS.md).
 
-## Important limitations / 重要限制
-
-### English
-
-- Direct reply is possible only when the source notification supplies a valid `RemoteInput` action. FluidCapsule cannot invent a private sending API for another app.
-- Smart replies are sent immediately when tapped. Manually typed replies still require the Send button.
-- OEM live-notification behavior can change between ColorOS releases.
-- Verified devices are CPH2797 on the documented Android 16 baseline and Pixel 11 Pro XL on Android 17.
-- Accessibility UI automation for apps without native reply actions is not implemented. The optional accessibility service does not read screen content.
-- The project does not include third-party APKs, decompiled source, proprietary assets, private protocols, or account-bypass features.
-
-### 中文
-
-- 只有来源通知提供有效的 `RemoteInput` 操作时才能直接回复；FluidCapsule 无法凭空创建其他应用的私有发送接口。
-- 点击智能回复会立即发送；手动输入的回复仍需点击发送按钮。
-- 不同 ColorOS 版本可能改变厂商实时通知行为。
-- 已验证设备为指定 Android 16 固件的 CPH2797，以及 Android 17 的 Pixel 11 Pro XL。
-- 尚未为不提供原生回复操作的应用实现无障碍界面自动化；可选无障碍服务不会读取屏幕内容。
-- 项目不包含第三方 APK、反编译源码、专有素材、私有协议或绕过账号安全的功能。
-
-## Quality gate / 质量门
+## Important limitations / Важные ограничения
 
 ### English
 
-- Local JUnit suite: 92 tests.
-- Pixel instrumentation: 4 checks for notification construction and history export. The existing OPPO suite was not rerun for 1.1.2.
-- CPH2797 instrumentation suite: 8 tests, including action fallback structure, continuous history scrolling, and system notification queue preemption/restoration.
-- Required build gate: unit tests, debug APK, instrumentation APK, and Android lint with no findings.
-- GitHub Actions runs unit tests, the debug build, and lint for every push to `main` and every pull request.
+* Direct reply is possible only when the source notification supplies a valid `RemoteInput` action. FluidCapsule cannot invent a private sending API for another app.
+* Smart replies are sent immediately when tapped. Manually typed replies still require the Send button.
+* OEM live-notification behavior can change between ColorOS releases.
+* Verified devices are CPH2797 on the documented Android 16 baseline and Pixel 11 Pro XL on Android 17.
+* Accessibility UI automation for apps without native reply actions is not implemented. The optional accessibility service does not read screen content.
+* The project does not include third-party APKs, decompiled source, proprietary assets, private protocols, or account-bypass features.
 
-### 中文
+### Русский
 
-- 本地 JUnit 测试：92 项。
-- Pixel 仪器测试：4 项，覆盖通知构造和历史导出。1.1.2 未重新运行原有 OPPO 真机套件。
-- CPH2797 仪器测试：8 项，包括 action 兜底结构、历史页连续滚动容器以及系统通知队列的抢占/恢复。
-- 必须通过的构建门槛：单元测试、debug APK、仪器测试 APK，以及零问题的 Android Lint。
-- 每次推送到 `main` 或创建 Pull Request 时，GitHub Actions 都会运行单元测试、debug 构建和 Lint。
+* Прямой ответ возможен только в том случае, если исходное уведомление предоставляет корректное действие `RemoteInput`; FluidCapsule не создаёт закрытые API для отправки сообщений в сторонние приложения.
+* Нажатие на умный ответ приводит к немедленной отправке сообщения; для набранного вручную текста по-прежнему требуется нажатие кнопки отправки.
+* Поведение фирменных живых уведомлений может отличаться в зависимости от версии ColorOS.
+* Проверенными устройствами являются CPH2797 на базовой сборке Android 16 и Pixel 11 Pro XL на Android 17.
+* Автоматизация интерфейса через службу специальных возможностей для приложений без нативной поддержки ответа не реализована; опциональная служба специальных возможностей не читает содержимое экрана.
+* Проект не включает сторонние APK, декомпилированный исходный код, проприетарные ресурсы, закрытые протоколы или методы обхода авторизации учётных записей.
 
-## Contributing / 参与贡献
+## Quality gate / Критерии качества
 
-Bug reports and pull requests are welcome. Remove notification text, OTPs, usernames, avatars, device serials, and local paths from logs or screenshots before posting. See [CONTRIBUTING.md](CONTRIBUTING.md).
+### English
 
-欢迎提交问题报告和 Pull Request。公开日志或截图前，请移除通知正文、验证码、用户名、头像、设备序列号和本地路径。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+* Local JUnit suite: 92 tests.
+* Pixel instrumentation: 4 checks for notification construction and history export. The existing OPPO suite was not rerun for 1.1.2.
+* CPH2797 instrumentation suite: 8 tests, including action fallback structure, continuous history scrolling, and system notification queue preemption/restoration.
+* Required build gate: unit tests, debug APK, instrumentation APK, and Android lint with no findings.
+* GitHub Actions runs unit tests, the debug build, and lint for every push to `main` and every pull request.
 
-## License / 许可证
+### Русский
 
-[MIT](LICENSE) © 2026 FluidCapsule contributors.
+* Локальный набор тестов JUnit: 92 теста.
+* Инструментальные тесты Pixel: 4 проверки создания уведомлений и экспорта истории. Для версии 1.1.2 набор тестов для OPPO повторно не запускался.
+* Инструментальный набор тестов CPH2797: 8 проверок, включая структуру резервных действий (fallback), контейнер плавной прокрутки истории и вытеснение/восстановление системной очереди уведомлений.
+* Обязательный порог прохождения сборки: модульные тесты, сборка debug APK, сборка APK инструментальных тестов и отсутствие замечаний Android Lint.
+* GitHub Actions запускает модульные тесты, сборку debug-версии и проверку Lint при каждом пуше в ветку `main` и для каждого Pull Request.
 
-本项目以 [MIT 许可证](LICENSE)开源，版权所有 © 2026 FluidCapsule contributors。
+## Contributing / Участие в разработке
+
+Bug reports and pull requests are welcome. Remove notification text, OTPs, usernames, avatars, device serials, and local paths from logs or screenshots before posting. See [CONTRIBUTING.md](https://www.google.com/search?q=CONTRIBUTING.md).
+
+Приветствуются отчёты об ошибках и Pull Request. Перед отправкой логов или скриншотов удаляйте из них текст уведомлений, одноразовые пароли, имена пользователей, аватары, серийные номера устройств и локальные пути. Подробнее см. в [CONTRIBUTING.md](https://www.google.com/search?q=CONTRIBUTING.md).
+
+## License / Лицензия
+
+[MIT](https://www.google.com/search?q=LICENSE) © 2026 FluidCapsule contributors.
+
+Проект распространяется под [лицензией MIT](https://www.google.com/search?q=LICENSE), © 2026 FluidCapsule contributors.
